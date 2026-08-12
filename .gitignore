@@ -13,3 +13,4 @@ __pycache__/
 *.pyc
 .agent-worktrees/
 .tmp_doc_review/
+.vercel
