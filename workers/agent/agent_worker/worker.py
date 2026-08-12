@@ -83,7 +83,7 @@ def process_queued(client, run_row: dict):
         return fail(client, run_row, "INVALID_REPOSITORY", "Configured path is not a Git repository")
     sha = base_sha(root, repo["default_branch"])
     slug = re.sub(r"[^a-z0-9]+", "-", task["title"].lower()).strip("-")[:36]
-    branch = f"agent/{task['id'][:8]}-{slug}"
+    branch = f"agent/{task['id'][:8]}-{run_row['id'][:8]}-{slug}"
     worktree = root.parent / ".agent-worktrees" / run_row["id"]
     client.table("agent_runs").update(
         {
