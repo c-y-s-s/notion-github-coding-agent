@@ -31,3 +31,22 @@ export async function getRun(id: string) {
   if (!hasSupabaseEnv()) return { run: demoRuns.find(x => x.id === id) ?? demoRuns[0], steps: [], artifacts: [{ id:"demo-artifact", type:"diff", content:"示範模式：設定 Supabase 並啟動 Worker 後，即可產生真實的程式碼修改。", metadata:{} }] };
   const db = adminDb(); const [{data:run,error},{data:steps},{data:artifacts}] = await Promise.all([db.from("agent_runs").select("*").eq("id",id).single(),db.from("agent_run_steps").select("*").eq("agent_run_id",id).order("sequence"),db.from("artifacts").select("*").eq("agent_run_id",id).order("created_at")]); if(error) throw error; return {run,steps:steps??[],artifacts:artifacts??[]};
 }
+
+export async function getTaskDetail(id: string) {
+  noStore();
+  if (!hasSupabaseEnv()) {
+    return { task: demoTasks.find(item => item.id === id) ?? null, pullRequests: [], latestRun: null, artifacts: [] };
+  }
+  const db = adminDb();
+  const { data: task, error } = await db.from("work_items").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  if (!task) return { task: null, pullRequests: [], latestRun: null, artifacts: [] };
+  const [{ data: pullRequests }, { data: latestRun }] = await Promise.all([
+    db.from("pull_requests").select("*").eq("work_item_id", id).order("created_at", { ascending: false }),
+    db.from("agent_runs").select("*").eq("work_item_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  const { data: artifacts } = latestRun
+    ? await db.from("artifacts").select("*").eq("agent_run_id", latestRun.id).order("created_at")
+    : { data: [] };
+  return { task: task as WorkItem, pullRequests: pullRequests ?? [], latestRun, artifacts: artifacts ?? [] };
+}
