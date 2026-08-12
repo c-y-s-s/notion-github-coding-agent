@@ -29,3 +29,4 @@ Without Supabase variables the dashboard uses two clearly labeled demo records; 
 The worker operates on one configured local Git repository. It runs the configured checks before any edit, allows at most three existing source/test files, blocks credentials, environment, migrations, CI/CD, lockfiles, and path escape, and reruns all checks. Approval is invalidated when the remote default branch changes. It never creates or merges a PR.
 
 See [architecture](docs/architecture.md), [workflow](docs/workflow.md), [database](docs/database.md), [agent safety](docs/agent-safety.md), and [demo script](docs/demo-script.md).
+# notion-github-coding-agent
