@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/webhooks/github", "/api/webhooks/notion", "/api/cron/reconcile"];
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/webhooks/github", "/api/webhooks/notion", "/api/cron/reconcile", "/api/internal"];
 
 export function middleware(request: NextRequest) {
   const sessionSecret = process.env.DASHBOARD_SESSION_SECRET;
