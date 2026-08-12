@@ -21,3 +21,9 @@ export type SyncJob = {
   updated_at: string;
   work_items: { title: string } | null;
 };
+
+export type WorkerHeartbeat = {
+  worker_id: string;
+  last_seen_at: string;
+  metadata: Record<string, unknown>;
+};
