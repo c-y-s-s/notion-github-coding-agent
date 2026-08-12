@@ -19,6 +19,10 @@ load_dotenv(PROJECT_ROOT / ".env", override=False)
 now = lambda: datetime.now(UTC).isoformat()
 
 
+def branch_slug(title: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:36] or "task"
+
+
 def db():
     return create_client(os.environ["NEXT_PUBLIC_SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
 
@@ -82,7 +86,7 @@ def process_queued(client, run_row: dict):
     if not (root / ".git").exists():
         return fail(client, run_row, "INVALID_REPOSITORY", "Configured path is not a Git repository")
     sha = base_sha(root, repo["default_branch"])
-    slug = re.sub(r"[^a-z0-9]+", "-", task["title"].lower()).strip("-")[:36]
+    slug = branch_slug(task["title"])
     branch = f"agent/{task['id'][:8]}-{run_row['id'][:8]}-{slug}"
     worktree = root.parent / ".agent-worktrees" / run_row["id"]
     client.table("agent_runs").update(
