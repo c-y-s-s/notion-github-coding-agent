@@ -1,5 +1,6 @@
 import { listGitHubPullRequests, listOpenGitHubIssues } from "@/lib/github";
 import { failure, ok } from "@/lib/http";
+import { scheduleSyncJobs } from "@/lib/sync-scheduler";
 import { adminDb } from "@/lib/supabase";
 
 export async function POST(request: Request) {
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
   let updated = 0;
   let pullRequestsCreated = 0;
   let pullRequestsUpdated = 0;
+  let enqueuedSync = false;
   for (const repository of repositories ?? []) {
     const issues = await listOpenGitHubIssues(repository.github_owner, repository.github_name);
     for (const issue of issues) {
@@ -49,8 +51,10 @@ export async function POST(request: Request) {
         const planningStatus = state === "merged" ? "done" : state === "closed" ? "blocked" : "in_progress";
         await db.from("work_items").update({ planning_status: planningStatus, github_pr_url: pullRequest.html_url }).eq("id", run.work_item_id);
         await db.from("sync_jobs").insert({ work_item_id: run.work_item_id, action: "update_notion_status" });
+        enqueuedSync = true;
       }
     }
   }
+  if (enqueuedSync) scheduleSyncJobs();
   return ok({ repositories: repositories?.length ?? 0, issues: { created, updated }, pullRequests: { created: pullRequestsCreated, updated: pullRequestsUpdated } });
 }

@@ -1,6 +1,6 @@
 import { demoRuns, demoTasks } from "./demo-data";
 import { adminDb, hasSupabaseEnv } from "./supabase";
-import type { AgentRun, WorkItem } from "./types";
+import type { AgentRun, SyncJob, WorkItem } from "./types";
 import { unstable_noStore as noStore } from "next/cache";
 
 export async function listTasks(): Promise<WorkItem[]> {
@@ -14,6 +14,17 @@ export async function listRuns(): Promise<AgentRun[]> {
   if (!hasSupabaseEnv()) return demoRuns;
   const { data, error } = await adminDb().from("agent_runs").select("*").order("created_at", { ascending: false });
   if (error) throw error; return data as AgentRun[];
+}
+export async function listSyncJobs(): Promise<SyncJob[]> {
+  noStore();
+  if (!hasSupabaseEnv()) return [];
+  const { data, error } = await adminDb()
+    .from("sync_jobs")
+    .select("*,work_items(title)")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data as unknown as SyncJob[];
 }
 export async function getRun(id: string) {
   noStore();

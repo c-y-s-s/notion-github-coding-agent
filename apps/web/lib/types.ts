@@ -8,3 +8,16 @@ export type WorkItem = {
 };
 
 export type AgentRun = { id: string; work_item_id: string; status: string; risk_level: string | null; branch_name: string | null; started_at: string | null; finished_at: string | null };
+
+export type SyncJob = {
+  id: string;
+  work_item_id: string;
+  action: string;
+  status: "queued" | "running" | "completed" | "failed";
+  attempt_count: number;
+  available_at: string;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+  work_items: { title: string } | null;
+};

@@ -1,6 +1,7 @@
 import { createGitHubIssue } from "@/lib/github";
 import { failure, ok } from "@/lib/http";
 import { updateNotionTask } from "@/lib/notion";
+import { scheduleSyncJobs } from "@/lib/sync-scheduler";
 import { adminDb } from "@/lib/supabase";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -51,6 +52,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
         });
       } catch {
         await db.from("sync_jobs").insert({ work_item_id: id, action: "update_notion_issue" });
+        scheduleSyncJobs();
       }
     }
 

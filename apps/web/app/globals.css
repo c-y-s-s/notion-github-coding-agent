@@ -154,7 +154,7 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
   .shell { grid-template-columns: 1fr; }
   .sidebar { position: static; height: auto; padding: 16px 20px; border-right: 0; border-bottom: 1px solid var(--border); }
   .brand { margin: 0 8px 14px; }
-  .nav { grid-template-columns: repeat(5, max-content); overflow-x: auto; padding-bottom: 2px; }
+  .nav { grid-template-columns: repeat(6, max-content); overflow-x: auto; padding-bottom: 2px; }
   .main { width: 100%; padding: 28px 22px 48px; }
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .split { grid-template-columns: 1fr; }

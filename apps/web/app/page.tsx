@@ -1,11 +1,11 @@
-import { listRuns, listTasks } from "@/lib/data";
+import { listRuns, listSyncJobs, listTasks } from "@/lib/data";
 import { StatusBadge } from "@/components/status-badge";
 
 export default async function Overview() {
-  const [tasks, runs] = await Promise.all([listTasks(), listRuns()]);
+  const [tasks, runs, syncJobs] = await Promise.all([listTasks(), listRuns(), listSyncJobs()]);
   const metrics = [
     ["待審核 Issue", tasks.filter(x => x.review_status === "pending").length], ["可執行任務", tasks.filter(x => x.planning_status === "ready").length],
-    ["執行中工作", runs.filter(x => ["queued", "running", "awaiting_approval"].includes(x.status)).length], ["同步失敗", 0]
+    ["執行中工作", runs.filter(x => ["queued", "running", "awaiting_approval"].includes(x.status)).length], ["同步失敗", syncJobs.filter(x => x.status === "failed").length]
   ];
   return <><div className="eyebrow">工作台</div><h1>總覽</h1><p className="lead">審核外部需求、追蹤開發進度，並在程式碼送往 GitHub 前確認修改內容。</p>
     <div className="grid">{metrics.map(([label, value]) => <div className="card" key={label}><span className="muted">{label}</span><div className="metric">{value}</div></div>)}</div>
