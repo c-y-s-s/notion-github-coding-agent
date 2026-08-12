@@ -6,7 +6,7 @@ describe("notionPageFields", () => {
     expect(notionPageFields({ properties: {
       Name: { type: "title", title: [{ plain_text: "Fix login" }] },
       Type: { type: "select", select: { name: "Bug" } },
-      "Planning Status": { type: "status", status: { name: "In Progress" } },
+      "Planning Status": { type: "status", status: { name: "進行中" } },
       Description: { type: "rich_text", rich_text: [{ plain_text: "Login fails" }] },
       "Acceptance Criteria": { type: "rich_text", rich_text: [{ plain_text: "Test passes" }] },
     } })).toEqual({ title: "Fix login", type: "bug", planning_status: "in_progress", description: "Login fails", acceptance_criteria: "Test passes" });

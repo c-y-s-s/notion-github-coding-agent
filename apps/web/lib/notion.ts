@@ -10,15 +10,15 @@ export function notionPageFields(page: Record<string, any>) {
   const properties = (page.properties ?? {}) as Record<string, NotionProperty>;
   const titleProperty = Object.values(properties).find(property => property.type === "title");
   const typeName = properties.Type?.select?.name?.toLowerCase();
-  const planningName = properties["Planning Status"]?.status?.name?.toLowerCase().replaceAll(" ", "_");
+  const rawPlanningName = properties["Planning Status"]?.status?.name;
   const allowedTypes = new Set(["bug", "feature", "chore"]);
-  const allowedPlanning = new Set(["draft", "ready", "in_progress", "blocked", "done"]);
+  const planningAliases: Record<string, string> = { Draft: "draft", Ready: "ready", "In Progress": "in_progress", Blocked: "blocked", Done: "done", "草稿": "draft", "可執行": "ready", "進行中": "in_progress", "受阻": "blocked", "已完成": "done" };
   return {
     title: plainText(titleProperty?.title) ?? "Untitled",
     type: allowedTypes.has(typeName) ? typeName : "unknown",
     description: plainText(properties.Description?.rich_text),
     acceptance_criteria: plainText(properties["Acceptance Criteria"]?.rich_text),
-    planning_status: allowedPlanning.has(planningName) ? planningName : "draft",
+    planning_status: planningAliases[rawPlanningName] ?? "draft",
   };
 }
 export function verifyNotionSignature(raw: string, signature: string | null, secret = process.env.NOTION_WEBHOOK_SECRET) {

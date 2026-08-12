@@ -24,3 +24,13 @@ export async function listOpenGitHubIssues(owner: string, repo: string) {
   const items = await response.json() as Array<Record<string, any>>;
   return items.filter(item => !item.pull_request);
 }
+
+export async function listGitHubPullRequests(owner: string, repo: string) {
+  if (!process.env.GITHUB_TOKEN) throw new Error("GITHUB_TOKEN is not configured");
+  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls?state=all&per_page=100`, {
+    headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" },
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`GitHub API failed: ${response.status}`);
+  return response.json() as Promise<Array<Record<string, any>>>;
+}
