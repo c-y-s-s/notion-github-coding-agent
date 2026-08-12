@@ -10,6 +10,12 @@ export async function POST(request: Request) {
   if (!eventId || !pageId) return failure("Unsupported Notion event");
   const db = adminDb(); const { error } = await db.from("sync_events").insert({ provider: "notion", provider_event_id: eventId, event_type: body.type, payload: body });
   if (error?.code === "23505") return ok({ duplicate: true }); if (error) return failure(error.message, 500);
+  if (body.type === "page.deleted") {
+    const result = await db.from("work_items").update({ notion_page_url: null, planning_status: "blocked", agent_status: "idle" }).eq("notion_page_id", pageId);
+    if (result.error) return failure(result.error.message, 500);
+    await db.from("sync_events").update({ status: "completed", processed_at: new Date().toISOString() }).eq("provider", "notion").eq("provider_event_id", eventId);
+    return ok({ accepted: true, deleted: true }, 202);
+  }
   if (body.entity?.type !== "page") {
     await db.from("sync_events").update({ status: "completed", processed_at: new Date().toISOString() }).eq("provider", "notion").eq("provider_event_id", eventId);
     return ok({ accepted: true, ignored: true }, 202);

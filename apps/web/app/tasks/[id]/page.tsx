@@ -18,11 +18,13 @@ export default async function TaskDetail({ params }: { params: Promise<{ id: str
   const testLog = artifacts.find(artifact => artifact.type === "test_log");
   const activeRun = latestRun && ["queued", "running", "awaiting_approval", "approved", "pushing"].includes(latestRun.status);
   const noChanges = latestRun?.error_code === "NO_CHANGES";
+  const notionDeleted = Boolean(task.notion_page_id && !task.notion_page_url);
 
   return <>
     <div className="eyebrow">任務詳情</div>
     <h1>{task.title}</h1>
-    <div className="actions detail-status"><StatusBadge value={task.source} /><StatusBadge value={task.planning_status} /><StatusBadge value={task.agent_status} /></div>
+    <div className="actions detail-status"><StatusBadge value={task.source} /><StatusBadge value={task.planning_status} /><StatusBadge value={task.agent_status} />{notionDeleted && <StatusBadge value="notion_deleted" />}</div>
+    {notionDeleted && <div className="notice">原始 Notion Task 已被刪除。系統保留 GitHub、PR 與 Agent 稽核紀錄，但不再回寫該 Notion Page。</div>}
     {!configured && <div className="notice">目前為示範模式。設定 Supabase 後即可建立 Issue 或執行程式碼分析。</div>}
 
     <div className="split section">
@@ -34,8 +36,8 @@ export default async function TaskDetail({ params }: { params: Promise<{ id: str
         <div className="actions">
           {task.notion_page_url && <a className="button secondary" href={task.notion_page_url} target="_blank" rel="noreferrer">開啟 Notion</a>}
           {task.github_issue_url && <a className="button secondary" href={task.github_issue_url} target="_blank" rel="noreferrer">開啟 GitHub Issue</a>}
-          {!task.github_issue_number && task.source === "notion" && <ActionButton endpoint={`/api/tasks/${task.id}/create-github-issue`} label="建立 GitHub Issue" tone="secondary" disabled={!configured} />}
-          {!activeRun && task.planning_status !== "done" && <ActionButton endpoint={`/api/tasks/${task.id}/prepare-patch`} label="分析並準備修正" disabled={!configured} />}
+          {!notionDeleted && !task.github_issue_number && task.source === "notion" && <ActionButton endpoint={`/api/tasks/${task.id}/create-github-issue`} label="建立 GitHub Issue" tone="secondary" disabled={!configured} />}
+          {!notionDeleted && !activeRun && task.planning_status !== "done" && <ActionButton endpoint={`/api/tasks/${task.id}/prepare-patch`} label="分析並準備修正" disabled={!configured} />}
         </div>
       </section>
 

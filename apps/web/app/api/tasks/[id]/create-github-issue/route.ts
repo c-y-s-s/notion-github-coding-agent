@@ -14,6 +14,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     .maybeSingle();
 
   if (!task) return failure("Task not found", 404);
+  if (task.notion_page_id && !task.notion_page_url) return failure("原始 Notion Task 已刪除，不能建立 GitHub Issue", 409);
   if (task.github_issue_node_id) return failure("GitHub issue already exists", 409);
   if (task.source !== "notion") return failure("Only Notion-origin tasks use this action", 422);
   const repo = task.repositories;

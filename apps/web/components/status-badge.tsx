@@ -1,5 +1,5 @@
 export function StatusBadge({ value }: { value: string }) {
-  const tone = /failed|blocked|ignored|rejected|cancelled/.test(value)
+  const tone = /failed|blocked|ignored|rejected|cancelled|notion_deleted/.test(value)
     ? "red"
     : /pending|queued|awaiting|draft|running|preparing|pushing/.test(value)
       ? "amber"
@@ -15,6 +15,7 @@ export function StatusBadge({ value }: { value: string }) {
     completed: "已完成", open: "開啟", closed: "已關閉", merged: "已合併",
     patch_ready: "可準備修正", patch_blocked: "禁止修正",
     no_changes: "無需修改", stale_base: "Diff 已過期",
+    notion_deleted: "Notion 已刪除",
   };
   return <span className={`badge ${tone}`}>{labels[value] ?? value.replaceAll("_", " ")}</span>;
 }
