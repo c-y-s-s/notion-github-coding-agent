@@ -159,16 +159,17 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .checkmark { margin-right: 7px; color: var(--green); font-weight: 700; }
 .file-list { display: flex; flex-wrap: wrap; gap: 7px; }
 .file-list code { padding: 5px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--panel-2); color: #4d5965; font-size: 12px; }
-.diff-viewer { max-height: 620px; overflow: auto; border: 1px solid #dfe3e7; border-radius: 7px; background: #fbfcfd; font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.diff-viewer { max-height: 620px; overflow: auto; border: 1px solid #30363d; border-radius: 7px; background: #0d1117; color: #c9d1d9; font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .diff-line { display: grid; grid-template-columns: 28px minmax(max-content, 1fr); min-height: 22px; white-space: pre; }
 .diff-line code { display: block; padding: 1px 12px 1px 0; }
-.diff-marker { position: sticky; left: 0; padding: 1px 7px; color: #98a1aa; text-align: center; user-select: none; }
-.diff-line.added { background: #eaf7f0; color: #1f6448; }
-.diff-line.added .diff-marker { background: #d9f0e4; color: var(--green); }
-.diff-line.removed { background: #fff0f1; color: #8c343a; }
-.diff-line.removed .diff-marker { background: #f9dde0; color: var(--red); }
-.diff-line.hunk { background: #eef4fa; color: #315f8c; }
-.diff-line.file, .diff-line.meta { color: #77818c; }
+.diff-marker { position: sticky; left: 0; padding: 1px 7px; background: #0d1117; color: #6e7681; text-align: center; user-select: none; }
+.diff-line.added { background: #0f2d20; color: #aff5b4; }
+.diff-line.added .diff-marker { background: #123b29; color: #56d364; }
+.diff-line.removed { background: #321c20; color: #ffdcd7; }
+.diff-line.removed .diff-marker { background: #492128; color: #ff7b72; }
+.diff-line.hunk { background: #17253b; color: #79c0ff; }
+.diff-line.hunk .diff-marker { background: #17253b; }
+.diff-line.file, .diff-line.meta { color: #8b949e; }
 .approval-actions { margin-top: 16px; }
 .login-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
 .login-card { width: min(420px, 100%); padding: 30px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); box-shadow: 0 10px 30px rgb(20 29 38 / 8%); }
@@ -185,10 +186,10 @@ body:has(.login-page) .main { max-width: none; margin: 0; padding: 0; }
   max-height: 560px;
   overflow: auto;
   padding: 16px;
-  border: 1px solid #dfe3e7;
+  border: 1px solid #30363d;
   border-radius: 6px;
-  background: #f6f7f8;
-  color: #333b44;
+  background: #0d1117;
+  color: #c9d1d9;
   font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace;
   white-space: pre-wrap;
 }
