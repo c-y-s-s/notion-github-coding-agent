@@ -149,6 +149,27 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .health-label.online { border-color: #cfe8dc; background: var(--green-bg); color: var(--green); }
 .alert-card { border-color: #efdfbf; background: var(--amber-bg); }
 .event-id { display: block; max-width: 240px; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.field-label { display: block; margin-bottom: 7px; color: #7d8792; font-size: 11px; font-weight: 650; letter-spacing: .045em; text-transform: uppercase; }
+.analysis-panel { display: grid; gap: 20px; }
+.analysis-summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+.analysis-summary p { max-width: 720px; margin: 0; font-size: 15px; line-height: 1.7; }
+.analysis-badges { display: flex; flex: none; flex-wrap: wrap; gap: 6px; }
+.analysis-list { display: grid; gap: 7px; margin: 0; padding-left: 20px; }
+.analysis-list li { padding-left: 3px; color: #3f4852; }
+.checkmark { margin-right: 7px; color: var(--green); font-weight: 700; }
+.file-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.file-list code { padding: 5px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--panel-2); color: #4d5965; font-size: 12px; }
+.diff-viewer { max-height: 620px; overflow: auto; border: 1px solid #dfe3e7; border-radius: 7px; background: #fbfcfd; font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.diff-line { display: grid; grid-template-columns: 28px minmax(max-content, 1fr); min-height: 22px; white-space: pre; }
+.diff-line code { display: block; padding: 1px 12px 1px 0; }
+.diff-marker { position: sticky; left: 0; padding: 1px 7px; color: #98a1aa; text-align: center; user-select: none; }
+.diff-line.added { background: #eaf7f0; color: #1f6448; }
+.diff-line.added .diff-marker { background: #d9f0e4; color: var(--green); }
+.diff-line.removed { background: #fff0f1; color: #8c343a; }
+.diff-line.removed .diff-marker { background: #f9dde0; color: var(--red); }
+.diff-line.hunk { background: #eef4fa; color: #315f8c; }
+.diff-line.file, .diff-line.meta { color: #77818c; }
+.approval-actions { margin-top: 16px; }
 .login-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
 .login-card { width: min(420px, 100%); padding: 30px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); box-shadow: 0 10px 30px rgb(20 29 38 / 8%); }
 .login-form { display: grid; gap: 14px; margin-top: 24px; }

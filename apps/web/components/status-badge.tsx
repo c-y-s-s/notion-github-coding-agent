@@ -9,6 +9,7 @@ export function StatusBadge({ value }: { value: string }) {
     succeeded: "成功", failed: "失敗", cancelled: "已取消", low: "低風險",
     medium: "中風險", high: "高風險", notion: "Notion", github: "GitHub",
     completed: "已完成", open: "開啟", closed: "已關閉", merged: "已合併",
+    patch_ready: "可準備修正", patch_blocked: "禁止修正",
   };
   return <span className={`badge ${tone}`}>{labels[value] ?? value.replaceAll("_", " ")}</span>;
 }

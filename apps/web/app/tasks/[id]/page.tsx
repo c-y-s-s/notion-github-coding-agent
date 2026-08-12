@@ -4,6 +4,8 @@ import { ActionButton } from "@/components/action-button";
 import { StatusBadge } from "@/components/status-badge";
 import { getTaskDetail } from "@/lib/data";
 import { hasSupabaseEnv } from "@/lib/supabase";
+import { AnalysisPanel } from "@/components/analysis-panel";
+import { DiffViewer } from "@/components/diff-viewer";
 
 export default async function TaskDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -54,12 +56,12 @@ export default async function TaskDetail({ params }: { params: Promise<{ id: str
 
     <section className="section card">
       <h2>AI 分析</h2>
-      {analysis?.content ? <pre className="code">{analysis.content}</pre> : <p className="muted">Agent 完成分析後會在這裡顯示摘要與風險。</p>}
+      <AnalysisPanel content={analysis?.content} />
     </section>
 
     <section className="section card">
       <h2>程式碼修改</h2>
-      {diff?.content ? <pre className="code">{diff.content}</pre> : <p className="muted">目前沒有產生程式碼 Diff。</p>}
+      <DiffViewer content={diff?.content} />
     </section>
 
     <section className="section card">
