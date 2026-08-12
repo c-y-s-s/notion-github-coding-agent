@@ -1,5 +1,9 @@
 export function StatusBadge({ value }: { value: string }) {
-  const tone = /failed|blocked|ignored|rejected|cancelled/.test(value) ? "red" : /pending|queued|awaiting|draft/.test(value) ? "amber" : "green";
+  const tone = /failed|blocked|ignored|rejected|cancelled/.test(value)
+    ? "red"
+    : /pending|queued|awaiting|draft|running|preparing|pushing/.test(value)
+      ? "amber"
+      : "green";
   const labels: Record<string, string> = {
     not_required: "不需審核", pending: "待審核", accepted: "已接受", linked: "已連結",
     needs_info: "待補資訊", ignored: "已忽略", draft: "草稿", ready: "可執行",
