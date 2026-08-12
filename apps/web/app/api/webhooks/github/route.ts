@@ -17,7 +17,12 @@ export async function POST(request: Request) {
       const issue = payload.issue; const repository = payload.repository;
       const repositoryIds = [repository.node_id, String(repository.id)].filter(Boolean);
       const { data: repo } = await db.from("repositories").select("id,project_id").in("github_node_id", repositoryIds).maybeSingle();
-      if (repo) await db.from("work_items").upsert({ project_id: repo.project_id, repository_id: repo.id, source: "github", type: issue.labels?.some((x:any) => x.name === "bug") ? "bug" : "unknown", title: issue.title, description: issue.body, review_status: "pending", github_issue_node_id: issue.node_id, github_issue_number: issue.number, github_issue_url: issue.html_url, github_issue_state: issue.state }, { onConflict: "repository_id,github_issue_node_id", ignoreDuplicates: false });
+      if (repo) {
+        const issueFields = { type: issue.labels?.some((x:any) => x.name === "bug") ? "bug" : "unknown", title: issue.title, description: issue.body, github_issue_number: issue.number, github_issue_url: issue.html_url, github_issue_state: issue.state };
+        const { data: existing } = await db.from("work_items").select("id").eq("repository_id", repo.id).eq("github_issue_node_id", issue.node_id).maybeSingle();
+        if (existing) await db.from("work_items").update(issueFields).eq("id", existing.id);
+        else await db.from("work_items").insert({ project_id: repo.project_id, repository_id: repo.id, source: "github", review_status: "pending", github_issue_node_id: issue.node_id, ...issueFields });
+      }
     }
     if (event === "pull_request" && payload.pull_request && payload.repository) {
       const pr = payload.pull_request; const repositoryIds = [payload.repository.node_id, String(payload.repository.id)].filter(Boolean); const { data: repo } = await db.from("repositories").select("id").in("github_node_id", repositoryIds).maybeSingle();

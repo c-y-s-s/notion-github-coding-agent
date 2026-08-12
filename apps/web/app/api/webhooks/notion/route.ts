@@ -17,4 +17,3 @@ export async function POST(request: Request) {
     await db.from("sync_events").update({ status: "completed", processed_at: new Date().toISOString() }).eq("provider", "notion").eq("provider_event_id", eventId); return ok({ accepted: true }, 202);
   } catch (e) { await db.from("sync_events").update({ status: "failed", last_error: String(e) }).eq("provider", "notion").eq("provider_event_id", eventId); return failure("Webhook processing failed", 500); }
 }
-
