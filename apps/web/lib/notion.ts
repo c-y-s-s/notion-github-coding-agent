@@ -1,4 +1,26 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+
+type NotionProperty = Record<string, any>;
+
+function plainText(parts: Array<{ plain_text?: string }> | undefined) {
+  return parts?.map(part => part.plain_text ?? "").join("") || null;
+}
+
+export function notionPageFields(page: Record<string, any>) {
+  const properties = (page.properties ?? {}) as Record<string, NotionProperty>;
+  const titleProperty = Object.values(properties).find(property => property.type === "title");
+  const typeName = properties.Type?.select?.name?.toLowerCase();
+  const planningName = properties["Planning Status"]?.status?.name?.toLowerCase().replaceAll(" ", "_");
+  const allowedTypes = new Set(["bug", "feature", "chore"]);
+  const allowedPlanning = new Set(["draft", "ready", "in_progress", "blocked", "done"]);
+  return {
+    title: plainText(titleProperty?.title) ?? "Untitled",
+    type: allowedTypes.has(typeName) ? typeName : "unknown",
+    description: plainText(properties.Description?.rich_text),
+    acceptance_criteria: plainText(properties["Acceptance Criteria"]?.rich_text),
+    planning_status: allowedPlanning.has(planningName) ? planningName : "draft",
+  };
+}
 export function verifyNotionSignature(raw: string, signature: string | null, secret = process.env.NOTION_WEBHOOK_SECRET) {
   if (!secret || !signature) return false;
   const expected = `sha256=${createHmac("sha256", secret).update(raw).digest("hex")}`;

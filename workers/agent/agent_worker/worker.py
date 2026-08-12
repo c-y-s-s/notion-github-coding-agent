@@ -1,3 +1,4 @@
+import argparse
 import os
 import re
 import socket
@@ -12,7 +13,9 @@ from .git_ops import base_sha, changed_files, create_worktree, diff, run, shell
 from .llm import ModelAdapter
 from .policy import MAX_SECONDS, validate_changed_files
 
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+load_dotenv(PROJECT_ROOT / "apps/web/.env.local")
+load_dotenv(PROJECT_ROOT / ".env", override=False)
 now = lambda: datetime.now(UTC).isoformat()
 
 
@@ -94,6 +97,13 @@ def process_queued(client, run_row: dict):
     client.table("work_items").update({"agent_status": "preparing"}).eq("id", task["id"]).execute()
     create_worktree(root, worktree, branch, sha)
     sequence = 1
+    install_command = repo.get("install_command")
+    if install_command:
+        result = shell(install_command, worktree, MAX_SECONDS)
+        log_step(client, run_row["id"], sequence, "inspect", "completed" if result.returncode == 0 else "failed", command=install_command, exit_code=result.returncode, output_excerpt=(result.stdout + result.stderr)[-8000:])
+        sequence += 1
+        if result.returncode:
+            return fail(client, run_row, "INSTALL_FAILED", "Repository dependencies could not be installed")
     checks = [repo.get("lint_command"), repo.get("typecheck_command"), repo.get("test_command")]
     for command in checks:
         if not command:
@@ -212,6 +222,9 @@ def process_approved(client, run_row: dict):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--once", action="store_true", help="Process at most one queued or approved run")
+    args = parser.parse_args()
     client = db()
     worker_id = os.getenv("AGENT_WORKER_ID", socket.gethostname())
     poll = int(os.getenv("AGENT_POLL_SECONDS", "3"))
@@ -236,6 +249,8 @@ def main():
                 )
             except (OSError, RuntimeError, ValueError, TimeoutError) as exc:
                 fail(client, item, "WORKER_ERROR", str(exc))
+        if args.once:
+            return
         time.sleep(poll)
 
 
