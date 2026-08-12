@@ -90,6 +90,7 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .metric { margin-top: 10px; color: #252b31; font-size: 26px; font-weight: 650; letter-spacing: -.03em; }
 .section { margin-top: 24px; }
 .notice { margin-top: 20px; padding: 11px 13px; border: 1px solid #d9e1e9; border-radius: 6px; background: #f3f7fa; color: #526577; font-size: 12px; }
+.outcome-success { border-color: #cfe8dc; background: var(--green-bg); color: var(--green); }
 
 .table { width: 100%; min-width: 620px; border-collapse: collapse; }
 .table th, .table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #eceef1; font-size: 13px; }

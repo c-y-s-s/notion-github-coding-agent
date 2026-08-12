@@ -27,6 +27,13 @@ def base_sha(repo: Path, branch: str) -> str:
     return result.stdout.strip()
 
 
+def fetch_branch(repo: Path, branch: str) -> str:
+    result = run(["git", "fetch", "origin", branch], repo, 120)
+    if result.returncode:
+        raise RuntimeError(result.stderr)
+    return base_sha(repo, f"origin/{branch}")
+
+
 def changed_files(worktree: Path) -> list[str]:
     result = run(["git", "diff", "--name-only"], worktree)
     return [line for line in result.stdout.splitlines() if line]

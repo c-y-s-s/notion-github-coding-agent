@@ -1,5 +1,7 @@
+from types import SimpleNamespace
+
 from agent_worker.policy import validate_changed_files
-from agent_worker.worker import branch_slug
+from agent_worker.worker import branch_slug, is_no_change_outcome
 
 
 def test_accepts_small_source_patch():
@@ -22,3 +24,10 @@ def test_rejects_path_escape():
 def test_branch_slug_falls_back_for_non_latin_title():
     assert branch_slug("修正取消狀態顯示成綠色") == "task"
     assert branch_slug("Fix cancelled badge") == "fix-cancelled-badge"
+
+
+def test_distinguishes_no_changes_from_safety_rejection():
+    no_change = SimpleNamespace(can_prepare_patch=False, risk_reasons=[], proposed_changes=[])
+    unsafe = SimpleNamespace(can_prepare_patch=False, risk_reasons=["migration is not allowed"], proposed_changes=[])
+    assert is_no_change_outcome(no_change, [])
+    assert not is_no_change_outcome(unsafe, [])

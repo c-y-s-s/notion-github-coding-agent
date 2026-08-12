@@ -11,11 +11,15 @@ export default async function RunDetail({ params }: { params: Promise<{ id: stri
   const { run, steps, artifacts } = await getRun(id);
   const analysis = artifacts.find((artifact: { type: string }) => artifact.type === "analysis");
   const patch = artifacts.find((artifact: { type: string }) => artifact.type === "diff");
+  const noChanges = run.error_code === "NO_CHANGES";
+  const staleBase = run.error_code === "STALE_BASE";
 
   return <>
     <div className="eyebrow">代理執行詳情</div>
     <h1>Run {run.id.slice(0, 8)}</h1>
     <div className="actions detail-status"><StatusBadge value={run.status} />{run.risk_level && <StatusBadge value={run.risk_level} />}</div>
+    {noChanges && <div className="notice outcome-success"><StatusBadge value="no_changes" /> 目前程式碼已符合需求，不需要建立分支或 PR。</div>}
+    {staleBase && <div className="notice"><StatusBadge value="stale_base" /> Main 已更新，系統已從最新 commit 自動建立替代 Run，請審核新的 Diff。</div>}
     {!configured && <div className="notice">目前為示範模式。連接 Supabase 與 Worker 後才能核准或拒絕修改。</div>}
 
     <section className="section card"><h2>AI 分析</h2><AnalysisPanel content={analysis?.content} /></section>

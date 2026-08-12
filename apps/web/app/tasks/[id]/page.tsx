@@ -17,6 +17,7 @@ export default async function TaskDetail({ params }: { params: Promise<{ id: str
   const diff = artifacts.find(artifact => artifact.type === "diff");
   const testLog = artifacts.find(artifact => artifact.type === "test_log");
   const activeRun = latestRun && ["queued", "running", "awaiting_approval", "approved", "pushing"].includes(latestRun.status);
+  const noChanges = latestRun?.error_code === "NO_CHANGES";
 
   return <>
     <div className="eyebrow">任務詳情</div>
@@ -43,7 +44,8 @@ export default async function TaskDetail({ params }: { params: Promise<{ id: str
         {latestRun ? <>
           <p><StatusBadge value={latestRun.status} /> {latestRun.risk_level && <StatusBadge value={latestRun.risk_level} />}</p>
           <p className="muted">模型：{latestRun.model}<br />分支：{latestRun.branch_name ?? "尚未建立"}</p>
-          {latestRun.error_message && <p className="error-text">{latestRun.error_message}</p>}
+          {latestRun.error_message && <p className={noChanges ? "muted" : "error-text"}>{latestRun.error_message}</p>}
+          {noChanges && <p><StatusBadge value="no_changes" /></p>}
           <Link className="button secondary" href={`/runs/${latestRun.id}`}>查看完整執行紀錄</Link>
         </> : <p className="muted">尚未執行程式碼分析。</p>}
       </section>

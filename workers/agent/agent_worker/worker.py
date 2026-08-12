@@ -9,7 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from supabase import create_client
 
-from .git_ops import base_sha, changed_files, create_worktree, diff, run, shell
+from .git_ops import base_sha, changed_files, create_worktree, diff, fetch_branch, remove_worktree, run, shell
 from .llm import ModelAdapter
 from .policy import MAX_SECONDS, validate_changed_files
 
@@ -79,13 +79,60 @@ def fail(client, run: dict, code: str, message: str, risk="medium"):
     client.table("work_items").update({"agent_status": "failed"}).eq("id", run["work_item_id"]).execute()
 
 
+def complete_without_changes(client, run: dict, risk: str):
+    client.table("agent_runs").update(
+        {
+            "status": "succeeded",
+            "risk_level": risk,
+            "error_code": "NO_CHANGES",
+            "error_message": "目前程式碼已符合需求，無需修改或推送分支。",
+            "finished_at": now(),
+        }
+    ).eq("id", run["id"]).execute()
+    client.table("work_items").update({"agent_status": "idle"}).eq("id", run["work_item_id"]).execute()
+
+
+def is_no_change_outcome(analysis, edits: list) -> bool:
+    return (
+        not analysis.can_prepare_patch
+        and not analysis.risk_reasons
+        and not analysis.proposed_changes
+        and not edits
+    )
+
+
+def refresh_stale_run(client, run_row: dict, repo: dict, worktree: Path):
+    client.table("agent_runs").update(
+        {
+            "status": "cancelled",
+            "risk_level": "medium",
+            "error_code": "STALE_BASE",
+            "error_message": "Default branch changed; a replacement run was queued from the latest commit.",
+            "finished_at": now(),
+        }
+    ).eq("id", run_row["id"]).execute()
+    remove_worktree(Path(repo["local_path"]).resolve(), worktree)
+    replacement = client.table("agent_runs").insert(
+        {
+            "work_item_id": run_row["work_item_id"],
+            "repository_id": run_row["repository_id"],
+            "status": "queued",
+            "model": run_row["model"],
+            "prompt_version": run_row["prompt_version"],
+            "attempt_number": run_row.get("attempt_number", 0) + 1,
+        }
+    ).execute().data[0]
+    client.table("work_items").update({"agent_status": "queued"}).eq("id", run_row["work_item_id"]).execute()
+    return replacement
+
+
 def process_queued(client, run_row: dict):
     task = client.table("work_items").select("*").eq("id", run_row["work_item_id"]).single().execute().data
     repo = client.table("repositories").select("*").eq("id", run_row["repository_id"]).single().execute().data
     root = Path(repo["local_path"]).resolve()
     if not (root / ".git").exists():
         return fail(client, run_row, "INVALID_REPOSITORY", "Configured path is not a Git repository")
-    sha = base_sha(root, repo["default_branch"])
+    sha = fetch_branch(root, repo["default_branch"])
     slug = branch_slug(task["title"])
     branch = f"agent/{task['id'][:8]}-{run_row['id'][:8]}-{slug}"
     worktree = root.parent / ".agent-worktrees" / run_row["id"]
@@ -135,6 +182,8 @@ def process_queued(client, run_row: dict):
             "metadata": {},
         }
     ).execute()
+    if is_no_change_outcome(proposal.analysis, proposal.edits):
+        return complete_without_changes(client, run_row, proposal.analysis.risk_level)
     if not proposal.analysis.can_prepare_patch or not proposal.edits:
         return fail(
             client,
@@ -196,10 +245,9 @@ def process_queued(client, run_row: dict):
 def process_approved(client, run_row: dict):
     repo = client.table("repositories").select("*").eq("id", run_row["repository_id"]).single().execute().data
     root, worktree = Path(repo["local_path"]).resolve(), Path(run_row["worktree_path"])
-    run(["git", "fetch", "origin", repo["default_branch"]], root, 120)
-    remote = base_sha(root, f"origin/{repo['default_branch']}")
+    remote = fetch_branch(root, repo["default_branch"])
     if remote != run_row["base_commit_sha"]:
-        return fail(client, run_row, "STALE_BASE", "Default branch changed; prepare a new patch")
+        return refresh_stale_run(client, run_row, repo, worktree)
     client.table("agent_runs").update({"status": "pushing"}).eq("id", run_row["id"]).execute()
     commit = run(["git", "add", "--all"], worktree)
     if commit.returncode:
