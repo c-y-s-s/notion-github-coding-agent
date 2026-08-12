@@ -1,0 +1,2 @@
+import { failure,ok } from "@/lib/http";import { processOneSyncJob } from "@/lib/sync-worker";
+export async function POST(request:Request){const expected=process.env.INTERNAL_JOB_SECRET;if(!expected||request.headers.get("authorization")!==`Bearer ${expected}`)return failure("Unauthorized",401);try{return ok((await processOneSyncJob())??{idle:true});}catch(e){return failure(e instanceof Error?e.message:"Sync failed",500);}}

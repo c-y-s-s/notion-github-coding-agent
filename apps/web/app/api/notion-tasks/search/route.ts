@@ -1,0 +1,2 @@
+import { adminDb } from "@/lib/supabase"; import { failure, ok } from "@/lib/http";
+export async function GET(request: Request) { const q = new URL(request.url).searchParams.get("q")?.trim(); if (!q || q.length < 2) return ok([]); const safe = q.replaceAll("%", "").replaceAll("_", ""); const { data,error } = await adminDb().from("work_items").select("id,title,notion_page_id").eq("source","notion").not("notion_page_id","is",null).is("github_issue_node_id",null).ilike("title",`%${safe}%`).limit(10); if(error)return failure(error.message,500);return ok(data); }

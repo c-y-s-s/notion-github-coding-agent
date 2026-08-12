@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+.ruff_cache/
+*.tsbuildinfo
+*.egg-info/
+.next/
+.turbo/
+.env
+.env.local
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.agent-worktrees/
+.tmp_doc_review/
