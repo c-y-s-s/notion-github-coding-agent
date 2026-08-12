@@ -10,6 +10,10 @@ export async function POST(request: Request) {
   if (!eventId || !pageId) return failure("Unsupported Notion event");
   const db = adminDb(); const { error } = await db.from("sync_events").insert({ provider: "notion", provider_event_id: eventId, event_type: body.type, payload: body });
   if (error?.code === "23505") return ok({ duplicate: true }); if (error) return failure(error.message, 500);
+  if (body.entity?.type !== "page") {
+    await db.from("sync_events").update({ status: "completed", processed_at: new Date().toISOString() }).eq("provider", "notion").eq("provider_event_id", eventId);
+    return ok({ accepted: true, ignored: true }, 202);
+  }
   try {
     const page: any = await retrieveNotionPage(pageId);
     const { data: project } = await db.from("projects").select("id,default_repository_id").eq("notion_data_source_id", page.parent?.data_source_id ?? page.parent?.database_id).maybeSingle();

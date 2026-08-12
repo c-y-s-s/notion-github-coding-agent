@@ -27,3 +27,15 @@ export type WorkerHeartbeat = {
   last_seen_at: string;
   metadata: Record<string, unknown>;
 };
+
+export type SyncEvent = {
+  id: string;
+  provider: "github" | "notion";
+  provider_event_id: string;
+  event_type: string;
+  status: "received" | "processing" | "completed" | "failed";
+  attempt_count: number;
+  last_error: string | null;
+  received_at: string;
+  processed_at: string | null;
+};

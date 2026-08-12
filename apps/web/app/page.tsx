@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { getLatestWorkerHeartbeat, listRuns, listSyncJobs, listTasks } from "@/lib/data";
+import { getLatestWorkerHeartbeat, listRuns, listSyncEvents, listSyncJobs, listTasks } from "@/lib/data";
 import { StatusBadge } from "@/components/status-badge";
 
 export default async function Overview() {
-  const [tasks, runs, syncJobs, heartbeat] = await Promise.all([listTasks(), listRuns(), listSyncJobs(), getLatestWorkerHeartbeat()]);
+  const [tasks, runs, syncJobs, syncEvents, heartbeat] = await Promise.all([listTasks(), listRuns(), listSyncJobs(), listSyncEvents(), getLatestWorkerHeartbeat()]);
   const failedJobs = syncJobs.filter(job => job.status === "failed");
+  const failedEvents = syncEvents.filter(event => event.status === "failed");
   const workerOnline = Boolean(heartbeat && Date.now() - new Date(heartbeat.last_seen_at).getTime() < 15_000);
   const metrics = [
     ["待審核 Issue", tasks.filter(task => task.review_status === "pending").length],
     ["可執行任務", tasks.filter(task => task.planning_status === "ready").length],
     ["執行中工作", runs.filter(run => ["queued", "running", "awaiting_approval"].includes(run.status)).length],
-    ["同步失敗", failedJobs.length],
+    ["同步失敗", failedJobs.length + failedEvents.length],
   ];
 
   return <>
@@ -24,7 +25,7 @@ export default async function Overview() {
       <span className={`health-label ${workerOnline ? "online" : "offline"}`}><span className={`health-dot ${workerOnline ? "healthy" : ""}`} />{workerOnline ? "在線" : "離線"}</span>
     </section>
 
-    {failedJobs.length > 0 && <section className="section card alert-card"><div><h2>同步需要處理</h2><p className="muted">有 {failedJobs.length} 筆同步工作已達重試上限。</p></div><Link className="button secondary" href="/sync">查看失敗工作</Link></section>}
+    {failedJobs.length + failedEvents.length > 0 && <section className="section card alert-card"><div><h2>同步需要處理</h2><p className="muted">有 {failedJobs.length} 筆回寫工作與 {failedEvents.length} 筆 Webhook 事件失敗。</p></div><Link className="button secondary" href="/sync">查看同步紀錄</Link></section>}
 
     <section className="section card"><h2>近期工作</h2>{tasks.length ? <table className="table"><thead><tr><th>任務</th><th>來源</th><th>規劃狀態</th><th>代理狀態</th></tr></thead><tbody>{tasks.slice(0, 10).map(task => <tr key={task.id}><td><Link href={`/tasks/${task.id}`}>{task.title}</Link></td><td><StatusBadge value={task.source} /></td><td><StatusBadge value={task.planning_status} /></td><td><StatusBadge value={task.agent_status} /></td></tr>)}</tbody></table> : <div className="empty">目前沒有任務。</div>}</section>
   </>;

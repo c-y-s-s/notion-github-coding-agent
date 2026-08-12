@@ -146,6 +146,7 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .health-label { display: inline-flex; align-items: center; gap: 7px; padding: 5px 9px; border: 1px solid #f0ced1; border-radius: 5px; background: var(--red-bg); color: var(--red); font-size: 12px; font-weight: 600; }
 .health-label.online { border-color: #cfe8dc; background: var(--green-bg); color: var(--green); }
 .alert-card { border-color: #efdfbf; background: var(--amber-bg); }
+.event-id { display: block; max-width: 240px; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
 
 .split { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 16px; }
 .code {

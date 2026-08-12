@@ -1,6 +1,6 @@
 import { demoRuns, demoTasks } from "./demo-data";
 import { adminDb, hasSupabaseEnv } from "./supabase";
-import type { AgentRun, SyncJob, WorkItem, WorkerHeartbeat } from "./types";
+import type { AgentRun, SyncEvent, SyncJob, WorkItem, WorkerHeartbeat } from "./types";
 import { unstable_noStore as noStore } from "next/cache";
 
 export async function listTasks(): Promise<WorkItem[]> {
@@ -32,6 +32,13 @@ export async function getLatestWorkerHeartbeat(): Promise<WorkerHeartbeat | null
   const { data, error } = await adminDb().from("worker_heartbeats").select("*").order("last_seen_at", { ascending: false }).limit(1).maybeSingle();
   if (error) throw error;
   return data as WorkerHeartbeat | null;
+}
+export async function listSyncEvents(): Promise<SyncEvent[]> {
+  noStore();
+  if (!hasSupabaseEnv()) return [];
+  const { data, error } = await adminDb().from("sync_events").select("id,provider,provider_event_id,event_type,status,attempt_count,last_error,received_at,processed_at").order("received_at", { ascending: false }).limit(100);
+  if (error) throw error;
+  return data as SyncEvent[];
 }
 export async function getRun(id: string) {
   noStore();

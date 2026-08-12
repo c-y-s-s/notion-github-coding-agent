@@ -1,6 +1,6 @@
 import { ActionButton } from "@/components/action-button";
 import { StatusBadge } from "@/components/status-badge";
-import { listSyncJobs } from "@/lib/data";
+import { listSyncEvents, listSyncJobs } from "@/lib/data";
 
 const actionLabels: Record<string, string> = {
   create_notion_task: "建立 Notion 任務",
@@ -9,7 +9,7 @@ const actionLabels: Record<string, string> = {
 };
 
 export default async function SyncPage() {
-  const jobs = await listSyncJobs();
+  const [jobs, events] = await Promise.all([listSyncJobs(), listSyncEvents()]);
   return <>
     <div className="eyebrow">系統整合</div>
     <h1>同步紀錄</h1>
@@ -27,5 +27,22 @@ export default async function SyncPage() {
         </tr>)}</tbody>
       </table>}
     </section>
+    <section className="section card">
+      <h2>Webhook 收件紀錄</h2>
+      {events.length === 0 ? <div className="empty">目前沒有 Webhook 事件。</div> : <table className="table">
+        <thead><tr><th>來源</th><th>事件</th><th>狀態</th><th>收到時間</th><th>錯誤</th></tr></thead>
+        <tbody>{events.map(event => <tr key={event.id}>
+          <td><StatusBadge value={event.provider} /></td>
+          <td>{event.event_type}<small className="event-id">{event.provider_event_id}</small></td>
+          <td><StatusBadge value={event.status} /></td>
+          <td>{formatTime(event.received_at)}</td>
+          <td className="muted">{event.last_error ?? "—"}</td>
+        </tr>)}</tbody>
+      </table>}
+    </section>
   </>;
+}
+
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", dateStyle: "short", timeStyle: "short" }).format(new Date(value));
 }
