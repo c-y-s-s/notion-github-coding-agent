@@ -22,6 +22,7 @@ from .git_ops import (
 )
 from .llm import ModelAdapter
 from .policy import MAX_SECONDS, validate_changed_files
+from .slack import notify_analysis_complete
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / "apps/web/.env.local")
@@ -89,7 +90,7 @@ def fail(client, run: dict, code: str, message: str, risk="medium"):
     client.table("work_items").update({"agent_status": "failed"}).eq("id", run["work_item_id"]).execute()
 
 
-def complete_without_changes(client, run: dict, risk: str):
+def complete_without_changes(client, run: dict, task: dict, risk: str):
     client.table("agent_runs").update(
         {
             "status": "succeeded",
@@ -100,6 +101,14 @@ def complete_without_changes(client, run: dict, risk: str):
         }
     ).eq("id", run["id"]).execute()
     client.table("work_items").update({"agent_status": "idle"}).eq("id", run["work_item_id"]).execute()
+    notify_analysis_complete(
+        client, run, task, "無需修改", risk, "目前程式碼已符合需求，沒有建立可推送的 Patch。"
+    )
+
+
+def fail_after_analysis(client, run: dict, task: dict, code: str, message: str, risk="medium"):
+    fail(client, run, code, message, risk)
+    notify_analysis_complete(client, run, task, "分析完成但無法產生 Patch", risk, message)
 
 
 def is_no_change_outcome(analysis, edits: list) -> bool:
@@ -242,30 +251,32 @@ def process_queued(client, run_row: dict):
         }
     ).execute()
     if is_no_change_outcome(proposal.analysis, proposal.edits):
-        return complete_without_changes(client, run_row, proposal.analysis.risk_level)
+        return complete_without_changes(client, run_row, task, proposal.analysis.risk_level)
     if not proposal.analysis.can_prepare_patch or not proposal.edits:
-        return fail(
+        return fail_after_analysis(
             client,
             run_row,
+            task,
             "PATCH_NOT_SAFE",
-            "; ".join(proposal.analysis.risk_reasons) or "Model declined patch",
+            "; ".join(proposal.analysis.risk_reasons) or "AI 無法提出安全、可驗證的修改。",
             proposal.analysis.risk_level,
         )
     paths = [edit.path for edit in proposal.edits]
     violations = validate_changed_files(paths)
     if violations:
-        return fail(client, run_row, "POLICY_VIOLATION", "; ".join(violations), "high")
+        return fail_after_analysis(client, run_row, task, "POLICY_VIOLATION", "; ".join(violations), "high")
     for edit in proposal.edits:
         target = (worktree / edit.path).resolve()
         if not target.is_relative_to(worktree.resolve()) or not target.exists():
-            return fail(client, run_row, "INVALID_EDIT_PATH", edit.path, "high")
+            return fail_after_analysis(client, run_row, task, "INVALID_EDIT_PATH", edit.path, "high")
         target.write_text(edit.content)
     actual = changed_files(worktree)
     violations = validate_changed_files(actual)
     if violations or set(actual) - set(paths):
-        return fail(
+        return fail_after_analysis(
             client,
             run_row,
+            task,
             "PATCH_SCOPE_VIOLATION",
             "; ".join(violations or ["unexpected changed files"]),
             "high",
@@ -286,7 +297,9 @@ def process_queued(client, run_row: dict):
         )
         sequence += 1
         if result.returncode:
-            return fail(client, run_row, "CHECKS_FAILED", "Generated patch did not pass required checks")
+            return fail_after_analysis(
+                client, run_row, task, "CHECKS_FAILED", "Generated patch did not pass required checks"
+            )
     patch = diff(worktree)
     client.table("artifacts").insert(
         {"agent_run_id": run_row["id"], "type": "diff", "content": patch, "metadata": {"files": actual}}
@@ -299,6 +312,14 @@ def process_queued(client, run_row: dict):
         }
     ).eq("id", run_row["id"]).execute()
     client.table("work_items").update({"agent_status": "awaiting_approval"}).eq("id", task["id"]).execute()
+    notify_analysis_complete(
+        client,
+        run_row,
+        task,
+        "等待人工核准",
+        proposal.analysis.risk_level,
+        f"已產生 Patch，修改 {len(actual)} 個檔案，必要檢查已通過。",
+    )
 
 
 def process_approved(client, run_row: dict):

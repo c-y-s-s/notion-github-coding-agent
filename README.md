@@ -11,6 +11,7 @@ Notion GitHub Coding Agent is a human-reviewed engineering workflow. Notion is t
 - Supabase schema with external identity constraints, jobs, runs, steps, artifacts, RLS, and worker heartbeat.
 - Local Python worker with baseline checks, structured OpenAI patch generation, three-file policy, sensitive-path denylist, post-edit checks, human approval, stale-base detection, and branch push.
 - API routes for patch preparation and approval/rejection.
+- Idempotent Slack notification when an AI analysis is ready for review, declined, or requires no changes.
 
 ## Quick start
 
