@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Sprint, WorkItem } from "@/lib/types";
 import { orderedSprints, sprintLabel, sprintSlots } from "@/lib/sprint-display";
+import { matchesDeadlineFilter, type DeadlineRange } from "@/lib/deadline-filter";
 import { StatusBadge } from "./status-badge";
 
-type Range = "overdue" | "this_week" | "last_week" | "next_week" | "custom" | "all";
+type Range = DeadlineRange;
 
 export function DeadlineWorkspace({ tasks, sprints, today }: { tasks: WorkItem[]; sprints: Sprint[]; today: string }) {
   const [range, setRange] = useState<Range>("this_week");
@@ -15,8 +16,7 @@ export function DeadlineWorkspace({ tasks, sprints, today }: { tasks: WorkItem[]
   const [start, setStart] = useState(isoDate(initialWeekStart));
   const [end, setEnd] = useState(isoDate(addDays(initialWeekStart, 6)));
   const currentSprintId = sprintSlots(sprints).current?.id;
-  const includeUnscheduled = range === "this_week" && sprintId === currentSprintId;
-  const filtered = useMemo(() => tasks.filter(task => (sprintId === "all" || (sprintId === "backlog" ? !task.sprint_id : task.sprint_id === sprintId)) && inRange(task.deadline, range, start, end, today, includeUnscheduled)), [tasks, range, sprintId, start, end, today, includeUnscheduled]);
+  const filtered = useMemo(() => tasks.filter(task => matchesDeadlineFilter(task, { range, sprintId, currentSprintId, customStart: start, customEnd: end, today })), [tasks, range, sprintId, start, end, today, currentSprintId]);
   const overdue = tasks.filter(task => task.deadline && task.deadline < today && task.planning_status !== "done").length;
   const dueToday = tasks.filter(task => task.deadline === today && task.planning_status !== "done").length;
   const unscheduled = tasks.filter(task => !task.deadline && task.planning_status !== "done").length;
@@ -32,15 +32,6 @@ export function DeadlineWorkspace({ tasks, sprints, today }: { tasks: WorkItem[]
   </section>;
 }
 
-function inRange(deadline: string | null, range: Range, customStart: string, customEnd: string, today: string, includeUnscheduled = false) {
-  if (range === "all") return true;
-  if (!deadline) return includeUnscheduled;
-  if (range === "overdue") return deadline < today;
-  const weekStart = startOfWeek(parseDate(today));
-  const offsets = { last_week: [-7, -1], this_week: [0, 6], next_week: [7, 13] } as const;
-  const [from, to] = range === "custom" ? [customStart, customEnd] : [isoDate(addDays(weekStart, offsets[range][0])), isoDate(addDays(weekStart, offsets[range][1]))];
-  return deadline >= from && deadline <= to;
-}
 function startOfWeek(date: Date) { const copy = new Date(date); const day = copy.getDay() || 7; copy.setHours(12, 0, 0, 0); copy.setDate(copy.getDate() - day + 1); return copy; }
 function addDays(date: Date, days: number) { const copy = new Date(date); copy.setDate(copy.getDate() + days); return copy; }
 function isoDate(date: Date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; }
