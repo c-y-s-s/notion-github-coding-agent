@@ -5,8 +5,11 @@ requires-python = ">=3.12"
 dependencies = ["openai>=1.100.0", "pydantic>=2.11.0", "supabase>=2.18.0", "python-dotenv>=1.1.0"]
 [project.optional-dependencies]
 dev = ["pytest>=8.4.0", "ruff>=0.12.0"]
+[project.scripts]
+agent-eval = "agent_worker.eval_runner:main"
 [tool.pytest.ini_options]
 pythonpath = ["."]
+[tool.setuptools.packages.find]
+include = ["agent_worker*"]
 [tool.ruff]
 line-length = 110
-
