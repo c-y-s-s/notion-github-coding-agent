@@ -4,7 +4,7 @@ import { failure, ok } from "@/lib/http";
 import { adminDb } from "@/lib/supabase";
 
 const schema = z.object({
-  model: z.string().trim().min(1).max(100).regex(/^[a-zA-Z0-9._-]+$/),
+  model: z.string().trim().min(1).max(100).regex(/^[a-zA-Z0-9._:-]+$/),
   prompt_version: z.enum(["v1", "v2"]),
   case_ids: z.array(z.string()).max(20).default([]),
 });

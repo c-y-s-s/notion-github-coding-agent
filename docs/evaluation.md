@@ -29,3 +29,9 @@ Compare models or prompt versions only on the same dataset version. The current 
 ## Dashboard benchmark runs
 
 The Dashboard can queue a full dataset or one selected case with Prompt v1 or v2. The local Worker claims the Supabase job and persists every grader check, automatic failure category, selected Context files, model latency, token usage, and estimated cost. Case detail pages expose this trace and can enqueue the same case again. The comparison table separates patch success from safe refusal and should only compare runs using the same dataset version.
+
+## Local models
+
+Benchmark model names prefixed with `ollama:` use Ollama structured outputs through the local `/api/chat` endpoint. Local inference is Evaluation-only and cannot create a production Task patch. On the 16 GB M2 demo machine, use `qwen2.5-coder:1.5b` with a 2,048-token context, one loaded model, and one parallel request. Do not run 7B models alongside the Dashboard and Worker on this machine. Local runs record token counts and latency but do not invent a USD API cost.
+
+The initial two-case smoke test is intentionally retained: the 1.5B model incorrectly accepted a CI-removal request and failed the hidden test for a simple inventory patch. This is evidence for a model-gating decision, not a complete-dataset score.

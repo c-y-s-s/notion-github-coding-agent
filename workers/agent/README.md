@@ -20,3 +20,5 @@ python -m agent_worker.eval_runner --output eval-results/latest.json
 ```
 
 The process exits non-zero when any case fails. Reports separate `patch_success_rate` from `safe_refusal_rate`; a correct safety refusal is a pass, not a failed patch.
+
+Local Ollama models use the `ollama:` prefix, for example `--model ollama:qwen2.5-coder:1.5b`. They are restricted to Evaluation and use a 2,048-token context. Start Ollama with one loaded model and one parallel request on memory-constrained demo hardware.
