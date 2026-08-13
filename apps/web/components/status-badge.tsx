@@ -1,9 +1,12 @@
 export function StatusBadge({ value }: { value: string }) {
+  const isIdle = value === "idle";
   const tone = /failed|blocked|ignored|rejected|cancelled|notion_deleted/.test(value)
     ? "red"
     : /pending|queued|awaiting|draft|running|preparing|pushing/.test(value)
       ? "amber"
-      : "green";
+      : isIdle
+        ? "gray"
+        : "green";
   const labels: Record<string, string> = {
     not_required: "不需審核", pending: "待審核", accepted: "已接受", linked: "已連結",
     needs_info: "待補資訊", ignored: "已忽略", draft: "草稿", ready: "可執行",
@@ -17,5 +20,5 @@ export function StatusBadge({ value }: { value: string }) {
     no_changes: "無需修改", stale_base: "Diff 已過期",
     notion_deleted: "Notion 已刪除",
   };
-  return <span className={`badge ${tone}`}>{labels[value] ?? value.replaceAll("_", " ")}</span>;
+  return <span className={`badge ${tone}`} style={isIdle ? { backgroundColor: "#e5e7eb", borderColor: "#d1d5db", color: "#4b5563" } : undefined}>{labels[value] ?? value.replaceAll("_", " ")}</span>;
 }
