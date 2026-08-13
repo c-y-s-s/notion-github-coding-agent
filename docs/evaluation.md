@@ -34,6 +34,8 @@ The Dashboard can queue a full dataset or one selected case with Prompt v1 or v2
 
 `python -m agent_worker.retrieval_eval` compares lexical and hybrid embedding retrieval on the same versioned fixtures. Retrieval Dataset 1.0.0 depends on Agent Dataset 1.1.0 but is versioned separately, so adding retrieval distractors does not falsely imply the Agent Benchmark was rerun. It reports Recall@K, Precision@K, MRR, selected Context size, and latency against explicit `retrieval_files` ground truth. Patch success remains separate because model behavior would confound the retrieval result. The retrieval corpus adds 18 files with overlapping names, keywords, and responsibilities so every measured case ranks 19 to 21 documents. Policy-only safety refusals and the deliberately underspecified quality case are excluded because their query does not imply a repository target; assigning one would create false ground truth.
 
+The production repository index excludes `workers/agent/evals/` and generated `eval-results/`. Those files are benchmark infrastructure, not application evidence, and allowing them into Task Context caused a real end-to-end run to retrieve fixture code ahead of the production component.
+
 ## Local models
 
 Benchmark model names prefixed with `ollama:` use Ollama structured outputs through the local `/api/chat` endpoint. Local inference is Evaluation-only and cannot create a production Task patch. On the 16 GB M2 demo machine, the tested set is `qwen2.5-coder:0.5b`, `qwen2.5-coder:1.5b`, and `qwen2.5-coder:3b`, always with a 2,048-token context, one loaded model, and one parallel request. Do not run 7B or 8B models on this machine. Local runs record token counts and latency but do not invent a USD API cost.

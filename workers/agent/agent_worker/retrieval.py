@@ -31,6 +31,7 @@ def tracked_documents(root: Path) -> list[dict]:
         if (
             path.suffix not in ALLOWED_SUFFIXES
             or any(part in path.parts for part in ("node_modules", ".next"))
+            or name.startswith(("workers/agent/evals/", "workers/agent/eval-results/"))
             or "lock" in path.name.lower()
         ):
             continue
@@ -62,7 +63,10 @@ def hybrid_rank(documents: list[dict], semantic: list[dict], query: str, limit: 
             lexical.append((matches, document["path"]))
     for rank, (_, path) in enumerate(sorted(lexical, key=lambda item: (-item[0], item[1])), start=1):
         scores[path] = 2 / (60 + rank)
+    document_paths = {document["path"] for document in documents}
     for rank, item in enumerate(semantic):
+        if item["path"] not in document_paths:
+            continue
         scores[item["path"]] = scores.get(item["path"], 0) + 1 / (61 + rank)
     return [path for path, _ in sorted(scores.items(), key=lambda item: (-item[1], item[0]))[:limit]]
 
@@ -117,6 +121,8 @@ def retrieve_context(client, repository_id: str, commit_sha: str, root: Path, ta
                 "match_count": 20,
             },
         ).execute().data
+        allowed = {document["path"] for document in documents}
+        semantic = [item for item in semantic if item["path"] in allowed]
         selected = hybrid_rank(documents, semantic, query)
         if not selected:
             raise RuntimeError("Semantic retrieval returned no files")
