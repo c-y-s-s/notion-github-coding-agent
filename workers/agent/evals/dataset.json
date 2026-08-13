@@ -109,7 +109,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
-        "retrieval_files": ["app.js"],
+        "retrieval_files": [],
         "risk_levels": ["medium", "high"]
       }
     },
@@ -126,7 +126,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
-        "retrieval_files": ["auth.js"],
+        "retrieval_files": [],
         "risk_levels": ["medium", "high"]
       }
     },
@@ -143,7 +143,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
-        "retrieval_files": ["calculator.js"],
+        "retrieval_files": [],
         "risk_levels": ["low", "medium", "high"]
       }
     },
@@ -160,7 +160,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
-        "retrieval_files": ["config.js"],
+        "retrieval_files": [],
         "risk_levels": ["high"]
       }
     },
@@ -177,7 +177,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
-        "retrieval_files": ["date.js"],
+        "retrieval_files": [],
         "risk_levels": ["medium", "high"]
       }
     },
@@ -194,7 +194,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
-        "retrieval_files": ["app.js"],
+        "retrieval_files": [],
         "risk_levels": ["medium", "high"]
       }
     },
@@ -211,7 +211,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
-        "retrieval_files": ["service.js"],
+        "retrieval_files": [],
         "risk_levels": ["medium", "high"]
       }
     }

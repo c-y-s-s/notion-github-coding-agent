@@ -23,3 +23,18 @@ def test_hybrid_rank_is_deterministic_for_equal_scores():
         {"path": "a.ts", "content": "retrying"},
     ]
     assert hybrid_rank(documents, [], "retrying", limit=2) == ["a.ts", "b.ts"]
+
+
+def test_hybrid_rank_does_not_let_semantic_noise_override_strong_lexical_evidence():
+    documents = [
+        {"path": "calculator.js", "content": "export function calculate() {}"},
+        {"path": "calculator-ui.js", "content": "export function calculatorLabel() {}"},
+        {"path": "unrelated.js", "content": "export const value = true"},
+    ]
+    semantic = [
+        {"path": "unrelated.js", "similarity": 0.99},
+        {"path": "calculator-ui.js", "similarity": 0.8},
+        {"path": "calculator.js", "similarity": 0.7},
+    ]
+
+    assert hybrid_rank(documents, semantic, "fix calculate function", limit=1) == ["calculator.js"]

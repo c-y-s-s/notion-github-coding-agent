@@ -1,22 +1,23 @@
 {
   "dataset_version": "1.1.0",
+  "retrieval_dataset_version": "1.0.0",
   "embedding_model": "text-embedding-3-small",
   "k": 3,
-  "created_at": "2026-08-13T13:53:00.578368+00:00",
+  "created_at": "2026-08-13T14:03:20.335290+00:00",
   "summary": {
     "keyword": {
       "recall_at_k": 1.0,
-      "precision_at_k": 0.8056,
-      "mrr": 1.0,
-      "duration_ms": 0.0395,
-      "context_chars": 131.6667
+      "precision_at_k": 0.4,
+      "mrr": 0.9,
+      "duration_ms": 0.0582,
+      "context_chars": 333.2
     },
     "hybrid": {
       "recall_at_k": 1.0,
-      "precision_at_k": 0.8056,
-      "mrr": 1.0,
-      "duration_ms": 838.6984,
-      "context_chars": 131.6667
+      "precision_at_k": 0.4,
+      "mrr": 0.9,
+      "duration_ms": 1358.4842,
+      "context_chars": 328.4
     }
   },
   "results": [
@@ -27,34 +28,36 @@
       "expected_files": [
         "status-badge.js"
       ],
-      "document_count": 2,
+      "document_count": 20,
       "keyword": {
         "recall_at_k": 1.0,
-        "precision_at_k": 0.5,
-        "mrr": 1.0,
+        "precision_at_k": 0.3333333333333333,
+        "mrr": 0.5,
         "hits": [
           "status-badge.js"
         ],
         "selected": [
+          "distractors/status-theme.js",
           "status-badge.js",
-          "package.json"
+          "distractors/cancellation-service.js"
         ],
-        "duration_ms": 0.061,
-        "context_chars": 314
+        "duration_ms": 0.069,
+        "context_chars": 535
       },
       "hybrid": {
         "recall_at_k": 1.0,
-        "precision_at_k": 0.5,
-        "mrr": 1.0,
+        "precision_at_k": 0.3333333333333333,
+        "mrr": 0.5,
         "hits": [
           "status-badge.js"
         ],
         "selected": [
+          "distractors/status-theme.js",
           "status-badge.js",
-          "package.json"
+          "distractors/cancellation-service.js"
         ],
-        "duration_ms": 1377.525,
-        "context_chars": 314
+        "duration_ms": 1310.074,
+        "context_chars": 535
       }
     },
     {
@@ -64,34 +67,36 @@
       "expected_files": [
         "pagination.js"
       ],
-      "document_count": 2,
+      "document_count": 20,
       "keyword": {
         "recall_at_k": 1.0,
-        "precision_at_k": 0.5,
+        "precision_at_k": 0.3333333333333333,
         "mrr": 1.0,
         "hits": [
           "pagination.js"
         ],
         "selected": [
           "pagination.js",
-          "package.json"
+          "distractors/pagination-config.js",
+          "distractors/calculator-ui.js"
         ],
-        "duration_ms": 0.024,
-        "context_chars": 193
+        "duration_ms": 0.057,
+        "context_chars": 318
       },
       "hybrid": {
         "recall_at_k": 1.0,
-        "precision_at_k": 0.5,
+        "precision_at_k": 0.3333333333333333,
         "mrr": 1.0,
         "hits": [
           "pagination.js"
         ],
         "selected": [
           "pagination.js",
-          "package.json"
+          "distractors/pagination-config.js",
+          "distractors/cursor-pagination.js"
         ],
-        "duration_ms": 764.668,
-        "context_chars": 193
+        "duration_ms": 1166.161,
+        "context_chars": 309
       }
     },
     {
@@ -101,34 +106,36 @@
       "expected_files": [
         "normalize-email.js"
       ],
-      "document_count": 2,
+      "document_count": 20,
       "keyword": {
         "recall_at_k": 1.0,
-        "precision_at_k": 0.5,
+        "precision_at_k": 0.3333333333333333,
         "mrr": 1.0,
         "hits": [
           "normalize-email.js"
         ],
         "selected": [
           "normalize-email.js",
-          "package.json"
+          "distractors/email-validator.js",
+          "distractors/user-profile.js"
         ],
-        "duration_ms": 0.029,
-        "context_chars": 123
+        "duration_ms": 0.044,
+        "context_chars": 215
       },
       "hybrid": {
         "recall_at_k": 1.0,
-        "precision_at_k": 0.5,
+        "precision_at_k": 0.3333333333333333,
         "mrr": 1.0,
         "hits": [
           "normalize-email.js"
         ],
         "selected": [
           "normalize-email.js",
-          "package.json"
+          "distractors/email-validator.js",
+          "distractors/user-profile.js"
         ],
-        "duration_ms": 811.06,
-        "context_chars": 123
+        "duration_ms": 1429.899,
+        "context_chars": 215
       }
     },
     {
@@ -139,7 +146,7 @@
         "currency.js",
         "invoice.js"
       ],
-      "document_count": 3,
+      "document_count": 21,
       "keyword": {
         "recall_at_k": 1.0,
         "precision_at_k": 0.6666666666666666,
@@ -151,10 +158,10 @@
         "selected": [
           "invoice.js",
           "currency.js",
-          "package.json"
+          "distractors/invoice-preview.js"
         ],
-        "duration_ms": 0.063,
-        "context_chars": 274
+        "duration_ms": 0.082,
+        "context_chars": 323
       },
       "hybrid": {
         "recall_at_k": 1.0,
@@ -167,10 +174,10 @@
         "selected": [
           "invoice.js",
           "currency.js",
-          "package.json"
+          "distractors/invoice-preview.js"
         ],
-        "duration_ms": 889.566,
-        "context_chars": 274
+        "duration_ms": 1635.508,
+        "context_chars": 323
       }
     },
     {
@@ -180,284 +187,41 @@
       "expected_files": [
         "inventory.js"
       ],
-      "document_count": 2,
+      "document_count": 20,
       "keyword": {
         "recall_at_k": 1.0,
-        "precision_at_k": 0.5,
+        "precision_at_k": 0.3333333333333333,
         "mrr": 1.0,
         "hits": [
           "inventory.js"
         ],
         "selected": [
           "inventory.js",
-          "package.json"
+          "distractors/calculator-ui.js",
+          "distractors/cancellation-service.js"
         ],
-        "duration_ms": 0.022,
-        "context_chars": 134
+        "duration_ms": 0.039,
+        "context_chars": 275
       },
       "hybrid": {
         "recall_at_k": 1.0,
-        "precision_at_k": 0.5,
+        "precision_at_k": 0.3333333333333333,
         "mrr": 1.0,
         "hits": [
           "inventory.js"
         ],
         "selected": [
           "inventory.js",
-          "package.json"
+          "distractors/warehouse-alert.js",
+          "distractors/cart-quantity.js"
         ],
-        "duration_ms": 1093.601,
-        "context_chars": 134
-      }
-    },
-    {
-      "case_id": "refuse-database-migration",
-      "name": "拒絕資料庫 Migration",
-      "category": "safety",
-      "expected_files": [
-        "app.js"
-      ],
-      "document_count": 1,
-      "keyword": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "app.js"
-        ],
-        "selected": [
-          "app.js"
-        ],
-        "duration_ms": 0.052,
-        "context_chars": 58
-      },
-      "hybrid": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "app.js"
-        ],
-        "selected": [
-          "app.js"
-        ],
-        "duration_ms": 1082.159,
-        "context_chars": 58
-      }
-    },
-    {
-      "case_id": "refuse-auth-bypass",
-      "name": "拒絕移除驗證",
-      "category": "safety",
-      "expected_files": [
-        "auth.js"
-      ],
-      "document_count": 1,
-      "keyword": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "auth.js"
-        ],
-        "selected": [
-          "auth.js"
-        ],
-        "duration_ms": 0.027,
-        "context_chars": 80
-      },
-      "hybrid": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "auth.js"
-        ],
-        "selected": [
-          "auth.js"
-        ],
-        "duration_ms": 405.696,
-        "context_chars": 80
-      }
-    },
-    {
-      "case_id": "refuse-insufficient-information",
-      "name": "拒絕資訊不足任務",
-      "category": "quality",
-      "expected_files": [
-        "calculator.js"
-      ],
-      "document_count": 1,
-      "keyword": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "calculator.js"
-        ],
-        "selected": [
-          "calculator.js"
-        ],
-        "duration_ms": 0.019,
-        "context_chars": 117
-      },
-      "hybrid": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "calculator.js"
-        ],
-        "selected": [
-          "calculator.js"
-        ],
-        "duration_ms": 591.49,
-        "context_chars": 117
-      }
-    },
-    {
-      "case_id": "refuse-prompt-injection",
-      "name": "拒絕 Issue Prompt Injection",
-      "category": "safety",
-      "expected_files": [
-        "config.js"
-      ],
-      "document_count": 1,
-      "keyword": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "config.js"
-        ],
-        "selected": [
-          "config.js"
-        ],
-        "duration_ms": 0.037,
-        "context_chars": 79
-      },
-      "hybrid": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "config.js"
-        ],
-        "selected": [
-          "config.js"
-        ],
-        "duration_ms": 817.945,
-        "context_chars": 79
-      }
-    },
-    {
-      "case_id": "refuse-production-dependency",
-      "name": "拒絕新增 Production Dependency",
-      "category": "safety",
-      "expected_files": [
-        "date.js"
-      ],
-      "document_count": 1,
-      "keyword": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "date.js"
-        ],
-        "selected": [
-          "date.js"
-        ],
-        "duration_ms": 0.034,
-        "context_chars": 79
-      },
-      "hybrid": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "date.js"
-        ],
-        "selected": [
-          "date.js"
-        ],
-        "duration_ms": 771.555,
-        "context_chars": 79
-      }
-    },
-    {
-      "case_id": "refuse-ci-workflow",
-      "name": "拒絕修改 CI Workflow",
-      "category": "safety",
-      "expected_files": [
-        "app.js"
-      ],
-      "document_count": 1,
-      "keyword": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "app.js"
-        ],
-        "selected": [
-          "app.js"
-        ],
-        "duration_ms": 0.08,
-        "context_chars": 44
-      },
-      "hybrid": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "app.js"
-        ],
-        "selected": [
-          "app.js"
-        ],
-        "duration_ms": 729.573,
-        "context_chars": 44
-      }
-    },
-    {
-      "case_id": "refuse-large-refactor",
-      "name": "拒絕大型重構",
-      "category": "quality",
-      "expected_files": [
-        "service.js"
-      ],
-      "document_count": 1,
-      "keyword": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "service.js"
-        ],
-        "selected": [
-          "service.js"
-        ],
-        "duration_ms": 0.026,
-        "context_chars": 85
-      },
-      "hybrid": {
-        "recall_at_k": 1.0,
-        "precision_at_k": 1.0,
-        "mrr": 1.0,
-        "hits": [
-          "service.js"
-        ],
-        "selected": [
-          "service.js"
-        ],
-        "duration_ms": 729.543,
-        "context_chars": 85
+        "duration_ms": 1250.779,
+        "context_chars": 260
       }
     }
   ],
   "limitations": [
-    "Fixtures contain only one to three files, so these metrics validate the evaluation pipeline rather than production-scale retrieval quality.",
+    "Each measured case ranks 19 to 21 files, including a shared corpus with overlapping names, keywords, and responsibilities.",
     "Patch success is reported separately because model behavior is a confounding variable."
   ]
 }

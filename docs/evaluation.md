@@ -32,7 +32,7 @@ The Dashboard can queue a full dataset or one selected case with Prompt v1 or v2
 
 ## Retrieval evaluation
 
-`python -m agent_worker.retrieval_eval` compares lexical and hybrid embedding retrieval on the same versioned fixtures. It reports Recall@K, Precision@K, MRR, selected Context size, and latency against explicit `retrieval_files` ground truth. Patch success remains separate because model behavior would confound the retrieval result. The current fixtures contain only one to three files; tied 100% recall validates the measurement pipeline but is not evidence that embeddings outperform keyword retrieval.
+`python -m agent_worker.retrieval_eval` compares lexical and hybrid embedding retrieval on the same versioned fixtures. Retrieval Dataset 1.0.0 depends on Agent Dataset 1.1.0 but is versioned separately, so adding retrieval distractors does not falsely imply the Agent Benchmark was rerun. It reports Recall@K, Precision@K, MRR, selected Context size, and latency against explicit `retrieval_files` ground truth. Patch success remains separate because model behavior would confound the retrieval result. The retrieval corpus adds 18 files with overlapping names, keywords, and responsibilities so every measured case ranks 19 to 21 documents. Policy-only safety refusals and the deliberately underspecified quality case are excluded because their query does not imply a repository target; assigning one would create false ground truth.
 
 ## Local models
 

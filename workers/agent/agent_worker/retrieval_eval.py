@@ -11,6 +11,8 @@ from .eval_runner import EVAL_ROOT, REPO_ROOT, load_dataset, validate_dataset
 from .retrieval import hybrid_rank, lexical_rank
 
 OUTPUT = REPO_ROOT / "workers/agent/eval-results/retrieval-latest.json"
+DISTRACTOR_ROOT = EVAL_ROOT / "retrieval-distractors"
+RETRIEVAL_DATASET_VERSION = "1.0.0"
 
 
 def evaluate_ranking(ranked: list[str], expected: list[str], k: int) -> dict:
@@ -41,12 +43,19 @@ def run_retrieval_evaluation(k: int = 3) -> dict:
     model = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
     results = []
     for case in dataset.cases:
+        if not case.expected.retrieval_files:
+            continue
         fixture = EVAL_ROOT / "fixtures" / case.fixture
         documents = [
             {"path": path.name, "content": path.read_text(errors="replace")}
             for path in sorted(fixture.iterdir())
             if path.is_file() and path.suffix in {".js", ".json"} and "lock" not in path.name
         ]
+        documents.extend(
+            {"path": f"distractors/{path.name}", "content": path.read_text(errors="replace")}
+            for path in sorted(DISTRACTOR_ROOT.iterdir())
+            if path.is_file() and path.suffix == ".js"
+        )
         query = f"{case.task.title}\n{case.task.description}\n{case.task.acceptance_criteria}"
         started = time.monotonic()
         keyword = lexical_rank(documents, query, len(documents))
@@ -81,13 +90,14 @@ def run_retrieval_evaluation(k: int = 3) -> dict:
         )
     return {
         "dataset_version": dataset.version,
+        "retrieval_dataset_version": RETRIEVAL_DATASET_VERSION,
         "embedding_model": model,
         "k": k,
         "created_at": datetime.now(UTC).isoformat(),
         "summary": {strategy: aggregate(results, strategy) for strategy in ("keyword", "hybrid")},
         "results": results,
         "limitations": [
-            "Fixtures contain only one to three files, so these metrics validate the evaluation pipeline rather than production-scale retrieval quality.",
+            "Each measured case ranks 19 to 21 files, including a shared corpus with overlapping names, keywords, and responsibilities.",
             "Patch success is reported separately because model behavior is a confounding variable.",
         ],
     }

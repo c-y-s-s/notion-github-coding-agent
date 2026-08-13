@@ -58,6 +58,9 @@ def load_dataset(path: Path = EVAL_ROOT / "dataset.json") -> EvalDataset:
 def validate_dataset(dataset: EvalDataset) -> list[str]:
     errors: list[str] = []
     seen: set[str] = set()
+    distractors = EVAL_ROOT / "retrieval-distractors"
+    if not distractors.is_dir() or len(list(distractors.glob("*.js"))) < 10:
+        errors.append("retrieval distractor corpus must contain at least 10 JavaScript files")
     for case in dataset.cases:
         if case.id in seen:
             errors.append(f"{case.id}: duplicate id")

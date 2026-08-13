@@ -4,7 +4,7 @@ import { getRetrievalEvaluation, retrievalVerdict } from "./retrieval-evaluation
 describe("retrieval evaluation report", () => {
   it("contains both strategies for every case", () => {
     const report = getRetrievalEvaluation();
-    expect(report.results).toHaveLength(12);
+    expect(report.results).toHaveLength(5);
     expect(report.results.every(result => result.keyword && result.hybrid)).toBe(true);
   });
 

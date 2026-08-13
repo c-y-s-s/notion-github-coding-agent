@@ -54,13 +54,16 @@ def tracked_documents(root: Path) -> list[dict]:
 def hybrid_rank(documents: list[dict], semantic: list[dict], query: str, limit: int = CONTEXT_FILES) -> list[str]:
     keywords = {word.lower() for word in re.findall(r"[A-Za-z][A-Za-z0-9_]{2,}", query)}
     scores: dict[str, float] = {}
+    lexical: list[tuple[int, str]] = []
     for document in documents:
         haystack = f"{document['path']}\n{document['content']}".lower()
-        lexical = sum(1 for keyword in keywords if keyword in haystack)
-        if lexical:
-            scores[document["path"]] = 2 * lexical / max(1, len(keywords))
+        matches = sum(1 for keyword in keywords if keyword in haystack)
+        if matches:
+            lexical.append((matches, document["path"]))
+    for rank, (_, path) in enumerate(sorted(lexical, key=lambda item: (-item[0], item[1])), start=1):
+        scores[path] = 2 / (60 + rank)
     for rank, item in enumerate(semantic):
-        scores[item["path"]] = scores.get(item["path"], 0) + 2 / (rank + 1) + max(0, item["similarity"])
+        scores[item["path"]] = scores.get(item["path"], 0) + 1 / (61 + rank)
     return [path for path, _ in sorted(scores.items(), key=lambda item: (-item[1], item[0]))[:limit]]
 
 
