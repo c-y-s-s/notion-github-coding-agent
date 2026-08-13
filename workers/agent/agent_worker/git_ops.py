@@ -43,12 +43,18 @@ def diff(worktree: Path) -> str:
     return run(["git", "diff", "--no-ext-diff"], worktree).stdout
 
 
-def create_worktree(repo: Path, destination: Path, branch: str, sha: str) -> None:
+def create_worktree(repo: Path, destination: Path, sha: str) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
         remove_worktree(repo, destination)
     run(["git", "worktree", "prune"], repo)
-    result = run(["git", "worktree", "add", "-b", branch, str(destination), sha], repo)
+    result = run(["git", "worktree", "add", "--detach", str(destination), sha], repo)
+    if result.returncode:
+        raise RuntimeError(result.stderr)
+
+
+def create_branch(worktree: Path, branch: str) -> None:
+    result = run(["git", "switch", "-c", branch], worktree)
     if result.returncode:
         raise RuntimeError(result.stderr)
 

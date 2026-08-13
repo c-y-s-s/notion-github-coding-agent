@@ -12,6 +12,7 @@ from supabase import create_client
 from .git_ops import (
     base_sha,
     changed_files,
+    create_branch,
     create_worktree,
     delete_local_branch,
     diff,
@@ -149,7 +150,7 @@ def cleanup_terminal_worktrees(client):
     terminal = ["succeeded", "failed", "rejected", "cancelled"]
     runs = (
         client.table("agent_runs")
-        .select("id,status,repository_id,worktree_path,branch_name")
+        .select("id,status,repository_id,worktree_path,branch_name,error_code")
         .in_("status", terminal)
         .not_.is_("worktree_path", "null")
         .execute()
@@ -170,6 +171,10 @@ def cleanup_terminal_worktrees(client):
         if worktree.parent != allowed_root:
             continue
         remove_worktree(root, worktree)
+        if run_row.get("branch_name") and (
+            run_row["status"] != "succeeded" or run_row.get("error_code") == "NO_CHANGES"
+        ):
+            delete_local_branch(root, run_row["branch_name"])
         client.table("agent_runs").update({"worktree_path": None}).eq("id", run_row["id"]).execute()
 
 
@@ -214,7 +219,7 @@ def process_queued(client, run_row: dict):
         }
     ).eq("id", run_row["id"]).execute()
     client.table("work_items").update({"agent_status": "preparing"}).eq("id", task["id"]).execute()
-    create_worktree(root, worktree, branch, sha)
+    create_worktree(root, worktree, sha)
     sequence = 1
     install_command = repo.get("install_command")
     if install_command:
@@ -331,6 +336,7 @@ def process_approved(client, run_row: dict):
     if remote != run_row["base_commit_sha"]:
         return refresh_stale_run(client, run_row, repo, worktree)
     client.table("agent_runs").update({"status": "pushing"}).eq("id", run_row["id"]).execute()
+    create_branch(worktree, run_row["branch_name"])
     commit = run(["git", "add", "--all"], worktree)
     if commit.returncode:
         return fail(client, run_row, "GIT_ADD_FAILED", commit.stderr)
