@@ -8,6 +8,7 @@ type Analysis = {
   related_files?: string[];
   proposed_changes?: string[];
   acceptance_checks?: string[];
+  evidence?: { path: string; line_start: number; line_end: number; quote: string; reason: string; verified?: boolean }[];
   can_prepare_patch?: boolean;
 };
 
@@ -28,6 +29,7 @@ export function AnalysisPanel({ content }: { content?: string | null }) {
     <AnalysisList title="預計修改" items={analysis.proposed_changes} />
     <AnalysisList title="驗收方式" items={analysis.acceptance_checks} checked />
     <AnalysisList title="風險原因" items={analysis.risk_reasons} />
+    {analysis.evidence?.length ? <div><span className="field-label">程式碼證據</span><div className="evidence-list">{analysis.evidence.map((item, index) => <article className={`evidence-item ${item.verified ? "verified" : "invalid"}`} key={`${item.path}-${item.line_start}-${index}`}><div className="evidence-heading"><code>{item.path}:{item.line_start}-{item.line_end}</code><span className={`evidence-status ${item.verified ? "verified" : "invalid"}`}>{item.verified ? "已由 Worker 驗證" : "引用無法驗證"}</span></div><pre>{item.quote}</pre><p>{item.reason}</p></article>)}</div></div> : null}
     {analysis.related_files?.length ? <div><span className="field-label">相關檔案</span><div className="file-list">{analysis.related_files.map(file => <code key={file}>{file}</code>)}</div></div> : null}
   </div>;
 }

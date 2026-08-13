@@ -101,6 +101,21 @@ def context_files(context: str) -> list[str]:
     return [line[4:-4] for line in context.splitlines() if line.startswith("--- ") and line.endswith(" ---")]
 
 
+def verify_evidence(context: str, evidence: list) -> list:
+    markers = list(re.finditer(r"(?:^|\n)--- (.+?) ---\n", context))
+    files: dict[str, list[str]] = {}
+    for index, marker in enumerate(markers):
+        end = markers[index + 1].start() if index + 1 < len(markers) else len(context)
+        files[marker.group(1)] = context[marker.end() : end].rstrip("\n").splitlines()
+    for citation in evidence:
+        lines = files.get(citation.path, [])
+        valid_range = 1 <= citation.line_start <= citation.line_end <= len(lines)
+        selected = "\n".join(lines[citation.line_start - 1 : citation.line_end]) if valid_range else ""
+        normalized_quote = " ".join(citation.quote.split())
+        citation.verified = bool(normalized_quote and normalized_quote in " ".join(selected.split()))
+    return evidence
+
+
 def token_totals(calls: list[dict]) -> dict:
     totals: dict[str, int] = {}
     for call in calls:
@@ -343,6 +358,7 @@ def process_queued(client, run_row: dict):
             client.table("agent_runs").update(
                 {"token_usage": {"calls": model_calls, "totals": totals, "estimated_cost_usd": estimate_cost_usd(adapter.model, totals)}}
             ).eq("id", run_row["id"]).execute()
+        proposal.analysis.evidence = verify_evidence(context, proposal.analysis.evidence)
         completed_attempts = attempt
         client.table("artifacts").insert(
             {
@@ -369,6 +385,15 @@ def process_queued(client, run_row: dict):
                 "PATCH_NOT_SAFE" if attempt == 1 else "REPAIR_DECLINED",
                 "; ".join(proposal.analysis.risk_reasons) or "AI 無法提出安全、可驗證的修改。",
                 proposal.analysis.risk_level,
+            )
+        if not any(citation.verified for citation in proposal.analysis.evidence):
+            return fail_after_analysis(
+                client,
+                run_row,
+                task,
+                "PATCH_EVIDENCE_MISSING",
+                "Agent 沒有提供可由 Repository Context 驗證的程式碼證據。",
+                "medium",
             )
         actual, violations = apply_proposal(worktree, proposal)
         log_step(

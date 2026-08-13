@@ -162,6 +162,17 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .checkmark { margin-right: 7px; color: var(--green); font-weight: 700; }
 .file-list { display: flex; flex-wrap: wrap; gap: 7px; }
 .file-list code { padding: 5px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--panel-2); color: #4d5965; font-size: 12px; }
+.evidence-list { display: grid; gap: 10px; }
+.evidence-item { overflow: hidden; border: 1px solid var(--border); border-radius: 7px; background: #fff; }
+.evidence-item.verified { border-color: #cfe8dc; }
+.evidence-item.invalid { border-color: #f0ced1; }
+.evidence-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border-bottom: 1px solid var(--border); background: var(--panel-2); }
+.evidence-heading code { overflow-wrap: anywhere; color: #35404b; font-size: 12px; }
+.evidence-status { flex: none; font-size: 11px; font-weight: 650; }
+.evidence-status.verified { color: var(--green); }
+.evidence-status.invalid { color: var(--red); }
+.evidence-item pre { overflow-x: auto; margin: 0; padding: 12px; background: #0d1117; color: #c9d1d9; font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }
+.evidence-item p { margin: 0; padding: 10px 12px; color: var(--muted); font-size: 13px; }
 .diff-viewer { max-height: 620px; overflow: auto; border: 1px solid #30363d; border-radius: 7px; background: #0d1117; color: #c9d1d9; font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .diff-line { display: grid; grid-template-columns: 28px minmax(max-content, 1fr); min-height: 22px; white-space: pre; }
 .diff-line code { display: block; padding: 1px 12px 1px 0; }

@@ -3,6 +3,15 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class CodeEvidence(BaseModel):
+    path: str
+    line_start: int = Field(ge=1)
+    line_end: int = Field(ge=1)
+    quote: str
+    reason: str
+    verified: bool = False
+
+
 class Analysis(BaseModel):
     summary: str
     complexity: Literal["small", "medium", "large"]
@@ -11,6 +20,7 @@ class Analysis(BaseModel):
     related_files: list[str] = Field(default_factory=list)
     proposed_changes: list[str] = Field(default_factory=list)
     acceptance_checks: list[str] = Field(default_factory=list)
+    evidence: list[CodeEvidence] = Field(default_factory=list, max_length=5)
     can_prepare_patch: bool
 
 

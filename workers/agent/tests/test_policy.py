@@ -2,8 +2,15 @@ import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 
+from agent_worker.models import CodeEvidence
 from agent_worker.policy import validate_changed_files
-from agent_worker.worker import branch_slug, error_signature, is_no_change_outcome, repository_context
+from agent_worker.worker import (
+    branch_slug,
+    error_signature,
+    is_no_change_outcome,
+    repository_context,
+    verify_evidence,
+)
 
 
 def test_accepts_small_source_patch():
@@ -90,3 +97,14 @@ def test_repository_context_can_force_include_requested_file(tmp_path: Path):
     )
 
     assert "--- apps/web/lib/rare-contract.ts ---" in context
+
+
+def test_verify_evidence_checks_path_lines_and_exact_quote():
+    context = "\n--- src/status.ts ---\nexport const state = 'queued'\nexport const color = 'amber'\n"
+    valid = CodeEvidence(path="src/status.ts", line_start=2, line_end=2, quote="color = 'amber'", reason="Current mapping")
+    wrong_line = CodeEvidence(path="src/status.ts", line_start=1, line_end=1, quote="color = 'amber'", reason="Wrong line")
+    missing = CodeEvidence(path="src/missing.ts", line_start=1, line_end=1, quote="anything", reason="Missing")
+
+    checked = verify_evidence(context, [valid, wrong_line, missing])
+
+    assert [item.verified for item in checked] == [True, False, False]
