@@ -19,6 +19,7 @@ export function notionPageFields(page: Record<string, any>) {
     description: plainText(properties.Description?.rich_text),
     acceptance_criteria: plainText(properties["Acceptance Criteria"]?.rich_text),
     planning_status: planningAliases[rawPlanningName] ?? "draft",
+    deadline: properties.Deadline?.date?.start?.slice(0, 10) ?? null,
   };
 }
 export function verifyNotionSignature(raw: string, signature: string | null, secret = process.env.NOTION_WEBHOOK_SECRET) {
@@ -33,9 +34,9 @@ export async function retrieveNotionPage(pageId: string) {
   if (!response.ok) throw new Error(`Notion API failed: ${response.status}`);
   return response.json() as Promise<Record<string, unknown>>;
 }
-export async function createNotionTask(input: { dataSourceId: string; title: string; source: string; githubIssueUrl?: string | null }) {
+export async function createNotionTask(input: { dataSourceId: string; title: string; source: string; githubIssueUrl?: string | null; deadline?: string | null }) {
   if (!process.env.NOTION_TOKEN) throw new Error("NOTION_TOKEN is not configured");
-  const response = await fetch("https://api.notion.com/v1/pages", { method:"POST", headers:{ Authorization:`Bearer ${process.env.NOTION_TOKEN}`, "Notion-Version":"2025-09-03", "Content-Type":"application/json" }, body:JSON.stringify({ parent:{type:"data_source_id",data_source_id:input.dataSourceId}, properties:{ Name:{title:[{text:{content:input.title}}]}, Source:{select:{name:input.source}}, ...(input.githubIssueUrl ? {"GitHub Issue URL":{url:input.githubIssueUrl}} : {}) } }) });
+  const response = await fetch("https://api.notion.com/v1/pages", { method:"POST", headers:{ Authorization:`Bearer ${process.env.NOTION_TOKEN}`, "Notion-Version":"2025-09-03", "Content-Type":"application/json" }, body:JSON.stringify({ parent:{type:"data_source_id",data_source_id:input.dataSourceId}, properties:{ Name:{title:[{text:{content:input.title}}]}, Source:{select:{name:input.source}}, ...(input.githubIssueUrl ? {"GitHub Issue URL":{url:input.githubIssueUrl}} : {}), ...(input.deadline ? {Deadline:{date:{start:input.deadline}}} : {}) } }) });
   if(!response.ok) throw new Error(`Notion create page failed: ${response.status} ${await response.text()}`); return response.json() as Promise<{id:string;url:string}>;
 }
 export async function updateNotionTask(pageId:string, properties:Record<string,unknown>) { if(!process.env.NOTION_TOKEN) throw new Error("NOTION_TOKEN is not configured"); const response=await fetch(`https://api.notion.com/v1/pages/${pageId}`,{method:"PATCH",headers:{Authorization:`Bearer ${process.env.NOTION_TOKEN}`,"Notion-Version":"2025-09-03","Content-Type":"application/json"},body:JSON.stringify({properties})});if(!response.ok)throw new Error(`Notion update failed: ${response.status}`);return response.json(); }

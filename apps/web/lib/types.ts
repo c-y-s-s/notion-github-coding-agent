@@ -4,6 +4,7 @@ export type WorkItem = {
   review_status: "not_required" | "pending" | "accepted" | "linked" | "needs_info" | "ignored";
   planning_status: "draft" | "ready" | "in_progress" | "blocked" | "done";
   agent_status: "idle" | "queued" | "preparing" | "awaiting_approval" | "rejected" | "pushing" | "branch_ready" | "failed";
+  deadline: string | null;
   github_issue_number: number | null; github_issue_url: string | null; notion_page_id?: string | null; notion_page_url: string | null; updated_at: string;
 };
 
