@@ -3,7 +3,8 @@ export function DiffViewer({ content }: { content?: string | null }) {
   return <div className="diff-viewer" role="region" aria-label="程式碼修改差異">
     {content.split("\n").map((line, index) => {
       const kind = line.startsWith("+++") || line.startsWith("---") ? "file" : line.startsWith("+") ? "added" : line.startsWith("-") ? "removed" : line.startsWith("@@") ? "hunk" : line.startsWith("diff ") || line.startsWith("index ") ? "meta" : "context";
-      return <div className={`diff-line ${kind}`} key={index}><span className="diff-marker">{kind === "added" ? "+" : kind === "removed" ? "−" : ""}</span><code>{line || " "}</code></div>;
+      const code = kind === "added" || kind === "removed" ? line.slice(1) : line;
+      return <div className={`diff-line ${kind}`} key={index}><span className="diff-marker">{kind === "added" ? "+" : kind === "removed" ? "−" : ""}</span><code>{code || " "}</code></div>;
     })}
   </div>;
 }
