@@ -29,10 +29,16 @@ export default async function Overview() {
 
     {failedJobs.length + failedEvents.length > 0 && <section className="section card alert-card"><div><h2>同步需要處理</h2><p className="muted">有 {failedJobs.length} 筆回寫工作與 {failedEvents.length} 筆 Webhook 事件失敗。</p></div><Link className="button secondary" href="/sync">查看同步紀錄</Link></section>}
 
-    <DeadlineWorkspace tasks={formalTasks.filter(task => task.planning_status !== "done")} sprints={sprints} />
+    <DeadlineWorkspace tasks={formalTasks.filter(task => task.planning_status !== "done")} sprints={sprints} today={taipeiDate()} />
 
     <section className="section card"><h2>近期工作</h2>{formalTasks.length ? <table className="table"><thead><tr><th>任務</th><th>來源</th><th>規劃狀態</th><th>代理狀態</th></tr></thead><tbody>{formalTasks.slice(0, 10).map(task => <tr key={task.id}><td><Link href={`/tasks/${task.id}`}>{task.title}</Link></td><td><StatusBadge value={task.source} /></td><td><StatusBadge value={task.planning_status} /></td><td><StatusBadge value={task.agent_status} /></td></tr>)}</tbody></table> : <div className="empty">目前沒有任務。</div>}</section>
   </>;
+}
+
+function taipeiDate() {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
 }
 
 function formatTime(value: string) {
