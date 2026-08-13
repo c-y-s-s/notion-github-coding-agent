@@ -1,0 +1,32 @@
+import subprocess
+from pathlib import Path
+
+from agent_worker.git_ops import create_worktree, remove_worktree
+
+
+def git(*args: str, cwd: Path) -> str:
+    result = subprocess.run(["git", *args], cwd=cwd, text=True, capture_output=True, check=True)
+    return result.stdout.strip()
+
+
+def test_worktree_can_be_removed_and_recreated(tmp_path: Path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git("init", "-b", "main", cwd=repo)
+    git("config", "user.name", "Test", cwd=repo)
+    git("config", "user.email", "test@example.com", cwd=repo)
+    (repo / "README.md").write_text("test\n")
+    git("add", "README.md", cwd=repo)
+    git("commit", "-m", "initial", cwd=repo)
+    sha = git("rev-parse", "HEAD", cwd=repo)
+    destination = tmp_path / ".agent-worktrees" / "run-1"
+
+    create_worktree(repo, destination, "agent/run-1", sha)
+    assert destination.exists()
+
+    remove_worktree(repo, destination)
+    assert not destination.exists()
+    assert str(destination) not in git("worktree", "list", "--porcelain", cwd=repo)
+
+    create_worktree(repo, destination, "agent/run-2", sha)
+    assert destination.exists()

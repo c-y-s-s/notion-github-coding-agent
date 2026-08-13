@@ -126,6 +126,34 @@ def refresh_stale_run(client, run_row: dict, repo: dict, worktree: Path):
     return replacement
 
 
+def cleanup_terminal_worktrees(client):
+    terminal = ["succeeded", "failed", "rejected", "cancelled"]
+    runs = (
+        client.table("agent_runs")
+        .select("id,repository_id,worktree_path")
+        .in_("status", terminal)
+        .not_.is_("worktree_path", "null")
+        .execute()
+        .data
+    )
+    for run_row in runs:
+        repo = (
+            client.table("repositories")
+            .select("local_path")
+            .eq("id", run_row["repository_id"])
+            .single()
+            .execute()
+            .data
+        )
+        root = Path(repo["local_path"]).resolve()
+        worktree = Path(run_row["worktree_path"]).resolve()
+        allowed_root = (root.parent / ".agent-worktrees").resolve()
+        if worktree.parent != allowed_root:
+            continue
+        remove_worktree(root, worktree)
+        client.table("agent_runs").update({"worktree_path": None}).eq("id", run_row["id"]).execute()
+
+
 def process_queued(client, run_row: dict):
     task = client.table("work_items").select("*").eq("id", run_row["work_item_id"]).single().execute().data
     repo = client.table("repositories").select("*").eq("id", run_row["repository_id"]).single().execute().data
@@ -281,6 +309,7 @@ def main():
     worker_id = os.getenv("AGENT_WORKER_ID", socket.gethostname())
     poll = int(os.getenv("AGENT_POLL_SECONDS", "3"))
     while True:
+        cleanup_terminal_worktrees(client)
         client.table("worker_heartbeats").upsert(
             {"worker_id": worker_id, "last_seen_at": now(), "metadata": {"pid": os.getpid()}}
         ).execute()

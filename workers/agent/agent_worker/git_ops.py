@@ -46,11 +46,17 @@ def diff(worktree: Path) -> str:
 def create_worktree(repo: Path, destination: Path, branch: str, sha: str) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.exists():
-        shutil.rmtree(destination)
+        remove_worktree(repo, destination)
+    run(["git", "worktree", "prune"], repo)
     result = run(["git", "worktree", "add", "-b", branch, str(destination), sha], repo)
     if result.returncode:
         raise RuntimeError(result.stderr)
 
 
 def remove_worktree(repo: Path, destination: Path) -> None:
-    run(["git", "worktree", "remove", "--force", str(destination)], repo)
+    result = run(["git", "worktree", "remove", "--force", str(destination)], repo)
+    run(["git", "worktree", "prune"], repo)
+    if destination.exists():
+        shutil.rmtree(destination)
+    if result.returncode and "is not a working tree" not in result.stderr:
+        raise RuntimeError(result.stderr)
