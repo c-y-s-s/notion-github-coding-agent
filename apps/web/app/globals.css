@@ -134,6 +134,8 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .detail-status { margin-top: 12px; }
 .error-text { color: var(--red); }
+.error-state { max-width: 720px; padding: 28px; }
+.error-state .button { margin-top: 20px; }
 .record-list { display: grid; gap: 8px; }
 .record-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; }
 .record-row:hover { background: #fafbfc; }
