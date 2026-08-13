@@ -2,12 +2,13 @@ import Link from "next/link";
 import { getLatestWorkerHeartbeat, listRuns, listSprints, listSyncEvents, listSyncJobs, listTasks } from "@/lib/data";
 import { StatusBadge } from "@/components/status-badge";
 import { DeadlineWorkspace } from "@/components/deadline-workspace";
+import { sprintLabel } from "@/lib/sprint-display";
 
 export default async function Overview() {
   const [tasks, runs, sprints, syncJobs, syncEvents, heartbeat] = await Promise.all([listTasks(), listRuns(), listSprints(), listSyncJobs(), listSyncEvents(), getLatestWorkerHeartbeat()]);
   const failedJobs = syncJobs.filter(job => job.status === "failed");
   const failedEvents = syncEvents.filter(event => event.status === "failed");
-  const formalTasks = tasks.filter(task => !["pending", "needs_info", "ignored"].includes(task.review_status));
+  const formalTasks = tasks.filter(task => !["pending", "needs_info", "ignored"].includes(task.review_status) && !isDeletedNotionTask(task) && task.title !== "Untitled");
   const workerOnline = Boolean(heartbeat && Date.now() - new Date(heartbeat.last_seen_at).getTime() < 15_000);
   const metrics = [
     ["待審核 Issue", tasks.filter(task => task.review_status === "pending").length],
@@ -31,7 +32,7 @@ export default async function Overview() {
 
     <DeadlineWorkspace tasks={formalTasks.filter(task => task.planning_status !== "done")} sprints={sprints} today={taipeiDate()} />
 
-    <section className="section card"><h2>近期工作</h2>{formalTasks.length ? <table className="table"><thead><tr><th>任務</th><th>來源</th><th>規劃狀態</th><th>代理狀態</th></tr></thead><tbody>{formalTasks.slice(0, 10).map(task => <tr key={task.id}><td><Link href={`/tasks/${task.id}`}>{task.title}</Link></td><td><StatusBadge value={task.source} /></td><td><StatusBadge value={task.planning_status} /></td><td><StatusBadge value={task.agent_status} /></td></tr>)}</tbody></table> : <div className="empty">目前沒有任務。</div>}</section>
+    <section className="section card"><div className="section-heading"><div><h2>近期工作</h2><p className="muted">最近更新的正式任務、工程連結與執行狀態。</p></div><Link className="button secondary" href="/tasks">查看全部</Link></div>{formalTasks.length ? <div className="table-scroll"><table className="table recent-work"><thead><tr><th>任務</th><th>類型／來源</th><th>Sprint</th><th>Deadline</th><th>Issue</th><th>規劃</th><th>AI</th><th>更新</th></tr></thead><tbody>{formalTasks.slice(0, 10).map(task => { const sprint=sprints.find(item=>item.id===task.sprint_id); return <tr key={task.id}><td><Link href={`/tasks/${task.id}`}><strong>{task.title}</strong></Link></td><td><div className="stacked-badges"><StatusBadge value={task.type} /><StatusBadge value={task.source} /></div></td><td>{sprint ? sprintLabel(sprint,sprints) : "Backlog"}</td><td>{task.deadline ?? "未排程"}</td><td>{task.github_issue_number ? <a href={task.github_issue_url ?? "#"} target="_blank" rel="noreferrer">#{task.github_issue_number}</a> : "—"}</td><td><StatusBadge value={task.planning_status} /></td><td><StatusBadge value={task.agent_status} /></td><td>{formatCompactTime(task.updated_at)}</td></tr>; })}</tbody></table></div> : <div className="empty">目前沒有任務。</div>}</section>
   </>;
 }
 
@@ -44,3 +45,6 @@ function taipeiDate() {
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", dateStyle: "medium", timeStyle: "medium" }).format(new Date(value));
 }
+
+function formatCompactTime(value: string) { const date=new Date(value); return `${date.getMonth()+1}/${date.getDate()} ${String(date.getHours()).padStart(2,"0")}:${String(date.getMinutes()).padStart(2,"0")}`; }
+function isDeletedNotionTask(task: { notion_page_id?: string | null; notion_page_url: string | null }) { return Boolean(task.notion_page_id && !task.notion_page_url); }

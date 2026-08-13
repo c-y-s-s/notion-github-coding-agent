@@ -247,6 +247,21 @@ body:has(.login-page) .main { max-width: none; margin: 0; padding: 0; }
 .sprint-task-list { display: grid; gap: 6px; margin: 14px 0; }
 .sprint-task-list a { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; }
 .sprint-task-list a:hover { background: #fafbfc; }
+.inbox-tabs, .inbox-heading, .section-heading, .stacked-badges { display: flex; align-items: center; gap: 8px; }
+.inbox-tabs { margin-bottom: 14px; }
+.inbox-tabs .filter-chip span { margin-left: 4px; color: #8b949e; }
+.inbox-item { padding: 18px 0; border-bottom: 1px solid var(--border); }
+.inbox-item:last-child { border-bottom: 0; }
+.inbox-heading, .section-heading { justify-content: space-between; }
+.inbox-heading h2, .section-heading h2, .section-heading p { margin-bottom: 0; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 20px; background: rgb(16 24 32 / 55%); }
+.link-modal { display: grid; gap: 14px; width: min(620px, 100%); padding: 24px; }
+.link-modal label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
+.table-scroll { overflow-x: auto; }
+.recent-work { min-width: 1050px; }
+.recent-work td { white-space: nowrap; }
+.recent-work td:first-child { min-width: 230px; white-space: normal; }
+.stacked-badges { flex-wrap: wrap; }
 
 @media (max-width: 900px) {
   .shell { grid-template-columns: 1fr; }

@@ -301,6 +301,8 @@ def process_queued(client, run_row: dict):
                 client, run_row, task, "CHECKS_FAILED", "Generated patch did not pass required checks"
             )
     patch = diff(worktree)
+    if not patch.strip():
+        return complete_without_changes(client, run_row, task, proposal.analysis.risk_level)
     client.table("artifacts").insert(
         {"agent_run_id": run_row["id"], "type": "diff", "content": patch, "metadata": {"files": actual}}
     ).execute()
