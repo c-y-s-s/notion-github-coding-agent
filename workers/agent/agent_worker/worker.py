@@ -22,7 +22,7 @@ from .git_ops import (
     shell,
 )
 from .llm import ModelAdapter
-from .policy import MAX_SECONDS, validate_changed_files
+from .policy import MAX_ATTEMPTS, MAX_SECONDS, validate_changed_files
 from .slack import notify_analysis_complete
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -39,13 +39,14 @@ def db():
     return create_client(os.environ["NEXT_PUBLIC_SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
 
 
-def log_step(client, run_id: str, sequence: int, kind: str, status: str, **fields):
+def log_step(client, run_id: str, sequence: int, kind: str, status: str, attempt_number: int = 0, **fields):
     client.table("agent_run_steps").insert(
         {
             "agent_run_id": run_id,
             "sequence": sequence,
             "step_type": kind,
             "status": status,
+            "attempt_number": attempt_number,
             "started_at": now(),
             "finished_at": now(),
             **fields,
@@ -119,6 +120,25 @@ def is_no_change_outcome(analysis, edits: list) -> bool:
         and not analysis.proposed_changes
         and not edits
     )
+
+
+def error_signature(command: str, output: str) -> str:
+    normalized = re.sub(r"\s+", " ", output.strip())[-2000:]
+    return f"{command}:{normalized}"
+
+
+def apply_proposal(worktree: Path, proposal) -> tuple[list[str], list[str]]:
+    paths = [edit.path for edit in proposal.edits]
+    violations = validate_changed_files(paths)
+    if violations:
+        return [], violations
+    for edit in proposal.edits:
+        target = (worktree / edit.path).resolve()
+        if not target.is_relative_to(worktree.resolve()) or not target.exists():
+            return [], [f"invalid edit path: {edit.path}"]
+        target.write_text(edit.content)
+    actual = changed_files(worktree)
+    return actual, validate_changed_files(actual)
 
 
 def refresh_stale_run(client, run_row: dict, repo: dict, worktree: Path):
@@ -243,76 +263,125 @@ def process_queued(client, run_row: dict):
         sequence += 1
         if result.returncode:
             return fail(client, run_row, "BASELINE_FAILED", "Baseline checks failed; no patch was generated")
-    proposal = ModelAdapter(run_row["model"]).prepare_patch(task, repository_context(worktree))
-    client.table("artifacts").insert(
-        {
-            "agent_run_id": run_row["id"],
-            "type": "analysis",
-            "content": proposal.analysis.model_dump_json(),
-            "metadata": {},
-        }
-    ).execute()
-    if is_no_change_outcome(proposal.analysis, proposal.edits):
-        return complete_without_changes(client, run_row, task, proposal.analysis.risk_level)
-    if not proposal.analysis.can_prepare_patch or not proposal.edits:
-        return fail_after_analysis(
-            client,
-            run_row,
+    adapter = ModelAdapter(run_row["model"])
+    check_failure = None
+    previous_signature = None
+    final_proposal = None
+    final_actual: list[str] = []
+    completed_attempts = 0
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        client.table("agent_runs").update({"attempt_number": attempt}).eq("id", run_row["id"]).execute()
+        proposal = adapter.prepare_patch(
             task,
-            "PATCH_NOT_SAFE",
-            "; ".join(proposal.analysis.risk_reasons) or "AI 無法提出安全、可驗證的修改。",
-            proposal.analysis.risk_level,
+            repository_context(worktree),
+            attempt=attempt,
+            check_failure=check_failure,
         )
-    paths = [edit.path for edit in proposal.edits]
-    violations = validate_changed_files(paths)
-    if violations:
-        return fail_after_analysis(client, run_row, task, "POLICY_VIOLATION", "; ".join(violations), "high")
-    for edit in proposal.edits:
-        target = (worktree / edit.path).resolve()
-        if not target.is_relative_to(worktree.resolve()) or not target.exists():
-            return fail_after_analysis(client, run_row, task, "INVALID_EDIT_PATH", edit.path, "high")
-        target.write_text(edit.content)
-    actual = changed_files(worktree)
-    violations = validate_changed_files(actual)
-    if violations or set(actual) - set(paths):
-        return fail_after_analysis(
-            client,
-            run_row,
-            task,
-            "PATCH_SCOPE_VIOLATION",
-            "; ".join(violations or ["unexpected changed files"]),
-            "high",
-        )
-    for command in checks:
-        if not command:
-            continue
-        result = shell(command, worktree, MAX_SECONDS)
+        completed_attempts = attempt
+        client.table("artifacts").insert(
+            {
+                "agent_run_id": run_row["id"],
+                "type": "analysis",
+                "content": proposal.analysis.model_dump_json(),
+                "metadata": {"attempt": attempt},
+            }
+        ).execute()
+        log_step(client, run_row["id"], sequence, "plan", "completed", attempt_number=attempt)
+        sequence += 1
+        if attempt == 1 and is_no_change_outcome(proposal.analysis, proposal.edits):
+            return complete_without_changes(client, run_row, task, proposal.analysis.risk_level)
+        if not proposal.analysis.can_prepare_patch or not proposal.edits:
+            return fail_after_analysis(
+                client,
+                run_row,
+                task,
+                "PATCH_NOT_SAFE" if attempt == 1 else "REPAIR_DECLINED",
+                "; ".join(proposal.analysis.risk_reasons) or "AI 無法提出安全、可驗證的修改。",
+                proposal.analysis.risk_level,
+            )
+        actual, violations = apply_proposal(worktree, proposal)
         log_step(
             client,
             run_row["id"],
             sequence,
-            "test",
-            "completed" if result.returncode == 0 else "failed",
-            command=command,
-            exit_code=result.returncode,
-            output_excerpt=(result.stdout + result.stderr)[-8000:],
+            "edit",
+            "failed" if violations else "completed",
+            attempt_number=attempt,
+            output_excerpt="; ".join(violations) if violations else ", ".join(actual),
         )
         sequence += 1
-        if result.returncode:
+        if violations:
             return fail_after_analysis(
-                client, run_row, task, "CHECKS_FAILED", "Generated patch did not pass required checks"
+                client, run_row, task, "PATCH_SCOPE_VIOLATION", "; ".join(violations), "high"
             )
-    patch = diff(worktree)
-    if not patch.strip():
-        return complete_without_changes(client, run_row, task, proposal.analysis.risk_level)
-    client.table("artifacts").insert(
-        {"agent_run_id": run_row["id"], "type": "diff", "content": patch, "metadata": {"files": actual}}
-    ).execute()
+        patch = diff(worktree)
+        if not patch.strip():
+            return complete_without_changes(client, run_row, task, proposal.analysis.risk_level)
+        client.table("artifacts").insert(
+            {
+                "agent_run_id": run_row["id"],
+                "type": "diff",
+                "content": patch,
+                "metadata": {"files": actual, "attempt": attempt, "verified": False},
+            }
+        ).execute()
+
+        check_failure = None
+        for command in checks:
+            if not command:
+                continue
+            result = shell(command, worktree, MAX_SECONDS)
+            output = (result.stdout + result.stderr)[-8000:]
+            log_step(
+                client,
+                run_row["id"],
+                sequence,
+                "test",
+                "completed" if result.returncode == 0 else "failed",
+                attempt_number=attempt,
+                command=command,
+                exit_code=result.returncode,
+                output_excerpt=output,
+            )
+            sequence += 1
+            if result.returncode:
+                check_failure = {"command": command, "exit_code": result.returncode, "output": output}
+                client.table("artifacts").insert(
+                    {
+                        "agent_run_id": run_row["id"],
+                        "type": "test_log",
+                        "content": output,
+                        "metadata": {"attempt": attempt, "command": command, "passed": False},
+                    }
+                ).execute()
+                break
+        if check_failure is None:
+            final_proposal, final_actual = proposal, actual
+            client.table("artifacts").insert(
+                {
+                    "agent_run_id": run_row["id"],
+                    "type": "diff",
+                    "content": patch,
+                    "metadata": {"files": actual, "attempt": attempt, "verified": True},
+                }
+            ).execute()
+            break
+        signature = error_signature(check_failure["command"], check_failure["output"])
+        if signature == previous_signature:
+            return fail_after_analysis(
+                client, run_row, task, "REPEATED_CHECK_FAILURE", "相同檢查錯誤連續出現兩次，已停止修正循環。"
+            )
+        previous_signature = signature
+    if final_proposal is None:
+        return fail_after_analysis(
+            client, run_row, task, "CHECKS_FAILED", f"修正 {completed_attempts} 次後仍未通過必要檢查。"
+        )
     client.table("agent_runs").update(
         {
             "status": "awaiting_approval",
-            "risk_level": proposal.analysis.risk_level,
-            "risk_reasons": proposal.analysis.risk_reasons,
+            "risk_level": final_proposal.analysis.risk_level,
+            "risk_reasons": final_proposal.analysis.risk_reasons,
+            "attempt_number": completed_attempts,
         }
     ).eq("id", run_row["id"]).execute()
     client.table("work_items").update({"agent_status": "awaiting_approval"}).eq("id", task["id"]).execute()
@@ -321,8 +390,8 @@ def process_queued(client, run_row: dict):
         run_row,
         task,
         "等待人工核准",
-        proposal.analysis.risk_level,
-        f"已產生 Patch，修改 {len(actual)} 個檔案，必要檢查已通過。",
+        final_proposal.analysis.risk_level,
+        f"已在第 {completed_attempts} 次嘗試通過檢查，修改 {len(final_actual)} 個檔案。",
     )
 
 

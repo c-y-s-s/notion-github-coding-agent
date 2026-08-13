@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
 from agent_worker.policy import validate_changed_files
-from agent_worker.worker import branch_slug, is_no_change_outcome
+from agent_worker.worker import branch_slug, error_signature, is_no_change_outcome
 
 
 def test_accepts_small_source_patch():
@@ -31,3 +31,12 @@ def test_distinguishes_no_changes_from_safety_rejection():
     unsafe = SimpleNamespace(can_prepare_patch=False, risk_reasons=["migration is not allowed"], proposed_changes=[])
     assert is_no_change_outcome(no_change, [])
     assert not is_no_change_outcome(unsafe, [])
+
+
+def test_error_signature_ignores_whitespace_but_keeps_command():
+    assert error_signature("pnpm test", "failed\n  expected  red") == error_signature(
+        "pnpm test", "failed expected red"
+    )
+    assert error_signature("pnpm typecheck", "failed expected red") != error_signature(
+        "pnpm test", "failed expected red"
+    )

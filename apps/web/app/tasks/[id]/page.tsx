@@ -13,9 +13,9 @@ export default async function TaskDetail({ params }: { params: Promise<{ id: str
   const { task, pullRequests, latestRun, artifacts } = await getTaskDetail(id);
   if (!task) notFound();
 
-  const analysis = artifacts.find(artifact => artifact.type === "analysis");
-  const diff = artifacts.find(artifact => artifact.type === "diff");
-  const testLog = artifacts.find(artifact => artifact.type === "test_log");
+  const analysis = artifacts.filter(artifact => artifact.type === "analysis").at(-1);
+  const diff = artifacts.filter(artifact => artifact.type === "diff" && artifact.metadata?.verified).at(-1);
+  const testLogs = artifacts.filter(artifact => artifact.type === "test_log");
   const activeRun = latestRun && ["queued", "running", "awaiting_approval", "approved", "pushing"].includes(latestRun.status);
   const noChanges = latestRun?.error_code === "NO_CHANGES";
   const notionDeleted = Boolean(task.notion_page_id && !task.notion_page_url);
@@ -70,7 +70,7 @@ export default async function TaskDetail({ params }: { params: Promise<{ id: str
 
     <section className="section card">
       <h2>測試結果</h2>
-      {testLog?.content ? <pre className="code">{testLog.content}</pre> : <p className="muted">目前沒有測試紀錄。</p>}
+      {testLogs.length ? testLogs.map(log => <div className="attempt-log" key={log.id}><strong>Attempt {log.metadata?.attempt ?? "—"} · {log.metadata?.command ?? "check"}</strong><pre className="code">{log.content}</pre></div>) : <p className="muted">最終檢查已通過，沒有失敗紀錄。</p>}
     </section>
   </>;
 }
