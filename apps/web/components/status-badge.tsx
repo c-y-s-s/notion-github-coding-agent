@@ -1,7 +1,7 @@
 export function StatusBadge({ value }: { value: string }) {
   const isIdle = value === "idle";
   const isPaused = value === "paused";
-  const tone = /failed|blocked|ignored|rejected|cancelled|notion_deleted/.test(value)
+  const tone = /failed|blocked|ignored|rejected|cancelled|notion_deleted|incorrect|unusable/.test(value)
     ? "red"
     : /pending|queued|awaiting|draft|running|preparing|pushing/.test(value)
       ? "amber"
@@ -20,7 +20,7 @@ export function StatusBadge({ value }: { value: string }) {
     medium: "中風險", high: "高風險", notion: "Notion", github: "GitHub",
     completed: "已完成", open: "開啟", closed: "已關閉", merged: "已合併",
     patch_ready: "可準備修正", patch_blocked: "禁止修正",
-    no_changes: "無需修改", stale_base: "Diff 已過期",
+    no_changes: "無需修改", stale_base: "Diff 已過期", correct: "正確", incorrect: "不正確", usable: "可用", unusable: "不可用",
     notion_deleted: "Notion 已刪除",
     planned: "已規劃", active: "進行中",
     paused: "已暫停",
