@@ -14,3 +14,4 @@ __pycache__/
 .agent-worktrees/
 .tmp_doc_review/
 .vercel
+supabase/.temp/
