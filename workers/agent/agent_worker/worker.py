@@ -9,7 +9,17 @@ from pathlib import Path
 from dotenv import load_dotenv
 from supabase import create_client
 
-from .git_ops import base_sha, changed_files, create_worktree, diff, fetch_branch, remove_worktree, run, shell
+from .git_ops import (
+    base_sha,
+    changed_files,
+    create_worktree,
+    delete_local_branch,
+    diff,
+    fetch_branch,
+    remove_worktree,
+    run,
+    shell,
+)
 from .llm import ModelAdapter
 from .policy import MAX_SECONDS, validate_changed_files
 
@@ -151,9 +161,28 @@ def cleanup_terminal_worktrees(client):
         if worktree.parent != allowed_root:
             continue
         remove_worktree(root, worktree)
-        if run_row["status"] == "rejected" and run_row.get("branch_name"):
-            run(["git", "branch", "-D", run_row["branch_name"]], root)
         client.table("agent_runs").update({"worktree_path": None}).eq("id", run_row["id"]).execute()
+
+
+def cleanup_rejected_branches(client):
+    runs = (
+        client.table("agent_runs")
+        .select("id,repository_id,branch_name")
+        .eq("status", "rejected")
+        .not_.is_("branch_name", "null")
+        .execute()
+        .data
+    )
+    for run_row in runs:
+        repo = (
+            client.table("repositories")
+            .select("local_path")
+            .eq("id", run_row["repository_id"])
+            .single()
+            .execute()
+            .data
+        )
+        delete_local_branch(Path(repo["local_path"]).resolve(), run_row["branch_name"])
 
 
 def process_queued(client, run_row: dict):
@@ -312,6 +341,7 @@ def main():
     poll = int(os.getenv("AGENT_POLL_SECONDS", "3"))
     while True:
         cleanup_terminal_worktrees(client)
+        cleanup_rejected_branches(client)
         client.table("worker_heartbeats").upsert(
             {"worker_id": worker_id, "last_seen_at": now(), "metadata": {"pid": os.getpid()}}
         ).execute()

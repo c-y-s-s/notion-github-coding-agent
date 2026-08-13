@@ -60,3 +60,9 @@ def remove_worktree(repo: Path, destination: Path) -> None:
         shutil.rmtree(destination)
     if result.returncode and "is not a working tree" not in result.stderr:
         raise RuntimeError(result.stderr)
+
+
+def delete_local_branch(repo: Path, branch: str) -> None:
+    result = run(["git", "branch", "-D", branch], repo)
+    if result.returncode and "not found" not in result.stderr.lower():
+        raise RuntimeError(result.stderr)
