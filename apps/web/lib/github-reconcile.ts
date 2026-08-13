@@ -39,7 +39,7 @@ export async function reconcileGitHub() {
         const result = await db.from("pull_requests").update(fields).eq("id", existing.id);
         if (result.error) throw serviceError("更新 Pull Request 失敗", result.error);
         pullRequestsUpdated += 1;
-      } else {
+      } else if (run?.work_item_id) {
         const result = await db.from("pull_requests").insert({ repository_id: repository.id, github_pr_node_id: pullRequest.node_id, ...fields });
         if (result.error) throw serviceError("建立 Pull Request 紀錄失敗", result.error);
         pullRequestsCreated += 1;
