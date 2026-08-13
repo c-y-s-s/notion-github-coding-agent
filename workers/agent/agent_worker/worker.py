@@ -206,15 +206,12 @@ def process_queued(client, run_row: dict):
     if not (root / ".git").exists():
         return fail(client, run_row, "INVALID_REPOSITORY", "Configured path is not a Git repository")
     sha = fetch_branch(root, repo["default_branch"])
-    slug = branch_slug(task["title"])
-    branch = f"agent/{task['id'][:8]}-{run_row['id'][:8]}-{slug}"
     worktree = root.parent / ".agent-worktrees" / run_row["id"]
     client.table("agent_runs").update(
         {
             "status": "running",
             "base_commit_sha": sha,
             "worktree_path": str(worktree),
-            "branch_name": branch,
             "started_at": now(),
         }
     ).eq("id", run_row["id"]).execute()
@@ -331,19 +328,21 @@ def process_queued(client, run_row: dict):
 
 def process_approved(client, run_row: dict):
     repo = client.table("repositories").select("*").eq("id", run_row["repository_id"]).single().execute().data
+    task = client.table("work_items").select("id,title").eq("id", run_row["work_item_id"]).single().execute().data
     root, worktree = Path(repo["local_path"]).resolve(), Path(run_row["worktree_path"])
     remote = fetch_branch(root, repo["default_branch"])
     if remote != run_row["base_commit_sha"]:
         return refresh_stale_run(client, run_row, repo, worktree)
-    client.table("agent_runs").update({"status": "pushing"}).eq("id", run_row["id"]).execute()
-    create_branch(worktree, run_row["branch_name"])
+    branch = run_row.get("branch_name") or f"agent/{task['id'][:8]}-{run_row['id'][:8]}-{branch_slug(task['title'])}"
+    client.table("agent_runs").update({"status": "pushing", "branch_name": branch}).eq("id", run_row["id"]).execute()
+    create_branch(worktree, branch)
     commit = run(["git", "add", "--all"], worktree)
     if commit.returncode:
         return fail(client, run_row, "GIT_ADD_FAILED", commit.stderr)
     commit = run(["git", "commit", "-m", f"fix: agent patch for {run_row['work_item_id'][:8]}"], worktree)
     if commit.returncode:
         return fail(client, run_row, "GIT_COMMIT_FAILED", commit.stderr)
-    pushed = run(["git", "push", "-u", "origin", run_row["branch_name"]], worktree, 180)
+    pushed = run(["git", "push", "-u", "origin", branch], worktree, 180)
     if pushed.returncode:
         return fail(client, run_row, "GIT_PUSH_FAILED", pushed.stderr)
     sha = base_sha(worktree, "HEAD")
@@ -351,7 +350,7 @@ def process_approved(client, run_row: dict):
         {"agent_run_id": run_row["id"], "type": "commit", "content": sha, "metadata": {}}
     ).execute()
     client.table("artifacts").insert(
-        {"agent_run_id": run_row["id"], "type": "branch", "content": run_row["branch_name"], "metadata": {}}
+        {"agent_run_id": run_row["id"], "type": "branch", "content": branch, "metadata": {}}
     ).execute()
     client.table("agent_runs").update({"status": "succeeded", "finished_at": now()}).eq(
         "id", run_row["id"]
