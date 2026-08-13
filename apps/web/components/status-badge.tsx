@@ -19,6 +19,7 @@ export function StatusBadge({ value }: { value: string }) {
     patch_ready: "可準備修正", patch_blocked: "禁止修正",
     no_changes: "無需修改", stale_base: "Diff 已過期",
     notion_deleted: "Notion 已刪除",
+    planned: "已規劃", active: "進行中",
   };
   return <span className={`badge ${tone}`} style={isIdle ? { backgroundColor: "#e5e7eb", borderColor: "#d1d5db", color: "#4b5563" } : undefined}>{labels[value] ?? value.replaceAll("_", " ")}</span>;
 }

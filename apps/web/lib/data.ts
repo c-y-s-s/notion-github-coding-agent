@@ -1,6 +1,6 @@
 import { demoRuns, demoTasks } from "./demo-data";
 import { adminDb, hasSupabaseEnv } from "./supabase";
-import type { AgentRun, SyncEvent, SyncJob, WorkItem, WorkerHeartbeat } from "./types";
+import type { AgentRun, Sprint, SyncEvent, SyncJob, WorkItem, WorkerHeartbeat } from "./types";
 import { unstable_noStore as noStore } from "next/cache";
 import { serviceError } from "./errors";
 
@@ -9,6 +9,13 @@ export async function listTasks(): Promise<WorkItem[]> {
   if (!hasSupabaseEnv()) return demoTasks;
   const { data, error } = await adminDb().from("work_items").select("*").order("updated_at", { ascending: false });
   if (error) throw serviceError("讀取任務失敗", error); return data as WorkItem[];
+}
+export async function listSprints(): Promise<Sprint[]> {
+  noStore();
+  if (!hasSupabaseEnv()) return [];
+  const { data, error } = await adminDb().from("sprints").select("*").order("start_date", { ascending: false });
+  if (error) throw serviceError("讀取 Sprint 失敗", error);
+  return data as Sprint[];
 }
 export async function listRuns(): Promise<AgentRun[]> {
   noStore();

@@ -5,7 +5,21 @@ export type WorkItem = {
   planning_status: "draft" | "ready" | "in_progress" | "blocked" | "done";
   agent_status: "idle" | "queued" | "preparing" | "awaiting_approval" | "rejected" | "pushing" | "branch_ready" | "failed";
   deadline: string | null;
+  sprint_id: string | null;
   github_issue_number: number | null; github_issue_url: string | null; notion_page_id?: string | null; notion_page_url: string | null; updated_at: string;
+};
+
+export type Sprint = {
+  id: string;
+  project_id: string;
+  name: string;
+  week_key: string;
+  start_date: string;
+  end_date: string;
+  status: "planned" | "active" | "completed";
+  goal: string | null;
+  notion_page_id: string;
+  notion_page_url: string | null;
 };
 
 export type AgentRun = { id: string; work_item_id: string; status: string; risk_level: string | null; branch_name: string | null; started_at: string | null; finished_at: string | null };

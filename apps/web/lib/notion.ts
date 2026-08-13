@@ -20,6 +20,22 @@ export function notionPageFields(page: Record<string, any>) {
     acceptance_criteria: plainText(properties["Acceptance Criteria"]?.rich_text),
     planning_status: planningAliases[rawPlanningName] ?? "draft",
     deadline: properties.Deadline?.date?.start?.slice(0, 10) ?? null,
+    sprint_notion_page_id: properties.Sprint?.relation?.[0]?.id ?? null,
+  };
+}
+
+export function notionSprintFields(page: Record<string, any>) {
+  const properties = (page.properties ?? {}) as Record<string, NotionProperty>;
+  const titleProperty = Object.values(properties).find(property => property.type === "title");
+  const statusName = properties.Status?.select?.name?.toLowerCase();
+  const statuses = new Set(["planned", "active", "completed"]);
+  return {
+    name: plainText(titleProperty?.title) ?? "Untitled Sprint",
+    week_key: plainText(properties["Week Key"]?.rich_text) ?? "unknown",
+    start_date: properties["Start Date"]?.date?.start?.slice(0, 10),
+    end_date: properties["End Date"]?.date?.start?.slice(0, 10),
+    status: statuses.has(statusName) ? statusName : "planned",
+    goal: plainText(properties.Goal?.rich_text),
   };
 }
 export function verifyNotionSignature(raw: string, signature: string | null, secret = process.env.NOTION_WEBHOOK_SECRET) {

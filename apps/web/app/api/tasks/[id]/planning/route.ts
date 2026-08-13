@@ -16,11 +16,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!parsed.success) return failure("日期或任務狀態格式不正確", 422);
   const { id } = await params;
   const db = adminDb();
-  const { data: task, error } = await db.from("work_items").select("id,planning_status,deadline,notion_page_id,notion_page_url").eq("id", id).maybeSingle();
+  const { data: task, error } = await db.from("work_items").select("id,project_id,planning_status,deadline,sprint_id,notion_page_id,notion_page_url").eq("id", id).maybeSingle();
   if (error) return failure(error.message, 500);
   if (!task) return failure("找不到任務", 404);
   if (task.notion_page_id && !task.notion_page_url) return failure("原始 Notion Task 已刪除，無法更新", 409);
-  const next = { planning_status: parsed.data.planningStatus, deadline: parsed.data.deadline };
+  let sprintPageId: string | null = null;
+  if (parsed.data.sprintId) {
+    const { data: sprint } = await db.from("sprints").select("notion_page_id").eq("id", parsed.data.sprintId).eq("project_id", task.project_id).maybeSingle();
+    if (!sprint) return failure("找不到這個 Sprint", 404);
+    sprintPageId = sprint.notion_page_id;
+  }
+  const next = { planning_status: parsed.data.planningStatus, deadline: parsed.data.deadline, sprint_id: parsed.data.sprintId };
   const updated = await db.from("work_items").update(next).eq("id", id);
   if (updated.error) return failure(updated.error.message, 500);
   try {
@@ -28,11 +34,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       await updateNotionTask(task.notion_page_id, {
         "Planning Status": { status: { name: notionStatuses[parsed.data.planningStatus] } },
         Deadline: parsed.data.deadline ? { date: { start: parsed.data.deadline } } : { date: null },
+        Sprint: { relation: sprintPageId ? [{ id: sprintPageId }] : [] },
         "Last Synced At": { date: { start: new Date().toISOString() } },
       });
     }
   } catch (reason) {
-    await db.from("work_items").update({ planning_status: task.planning_status, deadline: task.deadline }).eq("id", id);
+    await db.from("work_items").update({ planning_status: task.planning_status, deadline: task.deadline, sprint_id: task.sprint_id }).eq("id", id);
     return failure(reason instanceof Error ? reason.message : "Notion 回寫失敗", 502);
   }
   return ok({ id, ...next });

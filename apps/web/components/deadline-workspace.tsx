@@ -2,23 +2,25 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { WorkItem } from "@/lib/types";
+import type { Sprint, WorkItem } from "@/lib/types";
 import { StatusBadge } from "./status-badge";
 
 type Range = "overdue" | "this_week" | "last_week" | "next_week" | "custom" | "all";
 
-export function DeadlineWorkspace({ tasks }: { tasks: WorkItem[] }) {
+export function DeadlineWorkspace({ tasks, sprints }: { tasks: WorkItem[]; sprints: Sprint[] }) {
   const [range, setRange] = useState<Range>("this_week");
+  const [sprintId, setSprintId] = useState("all");
   const [start, setStart] = useState(isoDate(startOfWeek(new Date())));
   const [end, setEnd] = useState(isoDate(addDays(startOfWeek(new Date()), 6)));
   const today = isoDate(new Date());
-  const filtered = useMemo(() => tasks.filter(task => inRange(task.deadline, range, start, end, today)), [tasks, range, start, end, today]);
+  const filtered = useMemo(() => tasks.filter(task => (sprintId === "all" || (sprintId === "backlog" ? !task.sprint_id : task.sprint_id === sprintId)) && inRange(task.deadline, range, start, end, today)), [tasks, range, sprintId, start, end, today]);
   const overdue = tasks.filter(task => task.deadline && task.deadline < today && task.planning_status !== "done").length;
   const dueToday = tasks.filter(task => task.deadline === today && task.planning_status !== "done").length;
   const unscheduled = tasks.filter(task => !task.deadline && task.planning_status !== "done").length;
   return <section className="section card deadline-workspace">
     <div className="deadline-heading"><div><h2>Deadline 工作區</h2><p className="muted">依 Notion Deadline 安排本週工作，不隱藏未排程任務。</p></div><div className="deadline-stats"><span className={overdue ? "deadline-alert" : ""}>逾期 {overdue}</span><span>今天 {dueToday}</span><span>未排程 {unscheduled}</span></div></div>
     <div className="date-toolbar">
+      <select className="date-input" aria-label="Sprint 篩選" value={sprintId} onChange={event => setSprintId(event.target.value)}><option value="all">所有 Sprint</option><option value="backlog">Backlog</option>{sprints.map(sprint => <option key={sprint.id} value={sprint.id}>{sprint.name}</option>)}</select>
       {(["overdue", "this_week", "last_week", "next_week", "all"] as Range[]).map(value => <button key={value} className={`filter-chip ${range === value ? "active" : ""}`} onClick={() => setRange(value)}>{rangeLabel(value)}</button>)}
       <button className={`filter-chip ${range === "custom" ? "active" : ""}`} onClick={() => setRange("custom")}>自訂</button>
       {range === "custom" && <><input className="date-input" type="date" value={start} onChange={event => setStart(event.target.value)} /><span className="muted">至</span><input className="date-input" type="date" value={end} onChange={event => setEnd(event.target.value)} /></>}
