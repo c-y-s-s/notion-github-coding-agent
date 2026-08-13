@@ -130,7 +130,7 @@ def cleanup_terminal_worktrees(client):
     terminal = ["succeeded", "failed", "rejected", "cancelled"]
     runs = (
         client.table("agent_runs")
-        .select("id,repository_id,worktree_path")
+        .select("id,status,repository_id,worktree_path,branch_name")
         .in_("status", terminal)
         .not_.is_("worktree_path", "null")
         .execute()
@@ -151,6 +151,8 @@ def cleanup_terminal_worktrees(client):
         if worktree.parent != allowed_root:
             continue
         remove_worktree(root, worktree)
+        if run_row["status"] == "rejected" and run_row.get("branch_name"):
+            run(["git", "branch", "-D", run_row["branch_name"]], root)
         client.table("agent_runs").update({"worktree_path": None}).eq("id", run_row["id"]).execute()
 
 
