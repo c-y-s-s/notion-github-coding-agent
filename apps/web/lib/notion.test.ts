@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { notionPageFields, notionSprintFields } from "./notion";
+import { notionPageFields, notionSprintFields, readyTaskDefaults } from "./notion";
 
 describe("notionPageFields", () => {
   it("maps configured Notion properties to a work item", () => {
@@ -27,5 +27,22 @@ describe("notionPageFields", () => {
       Status: { select: { name: "Active" } },
       Goal: { rich_text: [{ plain_text: "Ship sprint board" }] },
     } })).toEqual({ name: "Sprint 2026-W33", week_key: "2026-W33", start_date: "2026-08-10", end_date: "2026-08-16", status: "active", goal: "Ship sprint board" });
+  });
+});
+
+describe("readyTaskDefaults", () => {
+  const activeSprint = { notion_page_id: "current-sprint", end_date: "2026-08-16" };
+
+  it("fills Current Sprint and its final day when a Ready task is unplanned", () => {
+    expect(readyTaskDefaults({ planning_status: "ready", deadline: null, sprint_notion_page_id: null }, activeSprint)).toEqual({
+      deadline: "2026-08-16",
+      sprint_notion_page_id: "current-sprint",
+      notionProperties: { Deadline: { date: { start: "2026-08-16" } }, Sprint: { relation: [{ id: "current-sprint" }] } },
+    });
+  });
+
+  it("never overwrites manually selected values or Draft tasks", () => {
+    expect(readyTaskDefaults({ planning_status: "ready", deadline: "2026-08-20", sprint_notion_page_id: "manual" }, activeSprint).notionProperties).toEqual({});
+    expect(readyTaskDefaults({ planning_status: "draft", deadline: null, sprint_notion_page_id: null }, activeSprint).notionProperties).toEqual({});
   });
 });

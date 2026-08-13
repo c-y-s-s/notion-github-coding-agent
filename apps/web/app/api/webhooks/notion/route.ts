@@ -1,4 +1,4 @@
-import { notionPageFields, notionSprintFields, retrieveNotionPage, verifyNotionSignature } from "@/lib/notion";
+import { notionPageFields, notionSprintFields, readyTaskDefaults, retrieveNotionPage, updateNotionTask, verifyNotionSignature } from "@/lib/notion";
 import { adminDb } from "@/lib/supabase";
 import { failure, ok } from "@/lib/http";
 
@@ -37,9 +37,19 @@ export async function POST(request: Request) {
     } else {
       const { data: project } = await db.from("projects").select("id,default_repository_id").eq("notion_data_source_id", dataSourceId).maybeSingle();
       if (project) {
-        const { sprint_notion_page_id, ...fields } = notionPageFields(page);
+        const parsedFields = notionPageFields(page);
+        const { data: activeSprint } = parsedFields.planning_status === "ready" && (!parsedFields.sprint_notion_page_id || !parsedFields.deadline)
+          ? await db.from("sprints").select("id,notion_page_id,end_date").eq("project_id", project.id).eq("status", "active").limit(1).maybeSingle()
+          : { data: null };
+        const defaults = readyTaskDefaults(parsedFields, activeSprint);
+        if (Object.keys(defaults.notionProperties).length) {
+          await updateNotionTask(page.id, { ...defaults.notionProperties, "Last Synced At": { date: { start: new Date().toISOString() } } });
+        }
+        const { sprint_notion_page_id, ...fields } = { ...parsedFields, deadline: defaults.deadline, sprint_notion_page_id: defaults.sprint_notion_page_id };
         let sprintId: string | null = null;
-        if (sprint_notion_page_id) {
+        if (activeSprint && sprint_notion_page_id === activeSprint.notion_page_id) {
+          sprintId = activeSprint.id;
+        } else if (sprint_notion_page_id) {
           const { data: sprint } = await db.from("sprints").select("id").eq("notion_page_id", sprint_notion_page_id).maybeSingle();
           sprintId = sprint?.id ?? null;
         }

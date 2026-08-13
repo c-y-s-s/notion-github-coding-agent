@@ -38,6 +38,23 @@ export function notionSprintFields(page: Record<string, any>) {
     goal: plainText(properties.Goal?.rich_text),
   };
 }
+
+export function readyTaskDefaults(
+  fields: { planning_status: string; deadline: string | null; sprint_notion_page_id: string | null },
+  activeSprint: { notion_page_id: string; end_date: string } | null,
+) {
+  if (fields.planning_status !== "ready" || !activeSprint) return { deadline: fields.deadline, sprint_notion_page_id: fields.sprint_notion_page_id, notionProperties: {} };
+  const deadline = fields.deadline ?? activeSprint.end_date;
+  const sprintPageId = fields.sprint_notion_page_id ?? activeSprint.notion_page_id;
+  return {
+    deadline,
+    sprint_notion_page_id: sprintPageId,
+    notionProperties: {
+      ...(!fields.deadline ? { Deadline: { date: { start: deadline } } } : {}),
+      ...(!fields.sprint_notion_page_id ? { Sprint: { relation: [{ id: sprintPageId }] } } : {}),
+    },
+  };
+}
 export function verifyNotionSignature(raw: string, signature: string | null, secret = process.env.NOTION_WEBHOOK_SECRET) {
   if (!secret || !signature) return false;
   const expected = `sha256=${createHmac("sha256", secret).update(raw).digest("hex")}`;
