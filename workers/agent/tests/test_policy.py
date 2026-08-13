@@ -1,7 +1,9 @@
+import subprocess
+from pathlib import Path
 from types import SimpleNamespace
 
 from agent_worker.policy import validate_changed_files
-from agent_worker.worker import branch_slug, error_signature, is_no_change_outcome
+from agent_worker.worker import branch_slug, error_signature, is_no_change_outcome, repository_context
 
 
 def test_accepts_small_source_patch():
@@ -40,3 +42,51 @@ def test_error_signature_ignores_whitespace_but_keeps_command():
     assert error_signature("pnpm typecheck", "failed expected red") != error_signature(
         "pnpm test", "failed expected red"
     )
+
+
+def test_repository_context_prioritizes_task_related_component_and_types(tmp_path: Path):
+    repo = tmp_path / "repo"
+    component = repo / "apps/web/components/status-badge.tsx"
+    types = repo / "apps/web/lib/types.ts"
+    component.parent.mkdir(parents=True)
+    types.parent.mkdir(parents=True)
+    component.write_text("export function StatusBadge() { return 'cancelled' }\n")
+    types.write_text("export type AgentStatus = 'queued' | 'cancelled'\n")
+    for index in range(10):
+        filler = repo / f"apps/web/a-filler-{index}.tsx"
+        filler.write_text("export const filler = '" + ("x" * 120) + "'\n")
+    subprocess.run(["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
+
+    context = repository_context(
+        repo,
+        {
+            "title": "Add retrying AgentStatus",
+            "description": "Update StatusBadge for retrying",
+            "acceptance_criteria": "AgentStatus and StatusBadge are updated",
+        },
+        limit=300,
+    )
+
+    assert "--- apps/web/components/status-badge.tsx ---" in context
+    assert "--- apps/web/lib/types.ts ---" in context
+
+
+def test_repository_context_can_force_include_requested_file(tmp_path: Path):
+    repo = tmp_path / "repo"
+    requested = repo / "apps/web/lib/rare-contract.ts"
+    requested.parent.mkdir(parents=True)
+    requested.write_text("export type RareContract = 'required'\n")
+    relevant = repo / "apps/web/retrying.ts"
+    relevant.write_text("export const retrying = true\n" + ("x" * 180))
+    subprocess.run(["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True, capture_output=True)
+
+    context = repository_context(
+        repo,
+        {"title": "retrying", "description": "", "acceptance_criteria": ""},
+        limit=140,
+        preferred_paths=["apps/web/lib/rare-contract.ts"],
+    )
+
+    assert "--- apps/web/lib/rare-contract.ts ---" in context

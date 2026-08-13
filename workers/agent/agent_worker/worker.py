@@ -54,10 +54,19 @@ def log_step(client, run_id: str, sequence: int, kind: str, status: str, attempt
     ).execute()
 
 
-def repository_context(root: Path, limit: int = 80_000) -> str:
+def repository_context(
+    root: Path,
+    task: dict | None = None,
+    limit: int = 80_000,
+    preferred_paths: list[str] | None = None,
+) -> str:
     allowed = {".ts", ".tsx", ".js", ".jsx", ".json"}
     chunks: list[str] = []
     size = 0
+    preferred = set(preferred_paths or [])
+    task_text = " ".join(str(task.get(key) or "") for key in ("title", "description", "acceptance_criteria")) if task else ""
+    keywords = {word.lower() for word in re.findall(r"[A-Za-z][A-Za-z0-9_]{2,}", task_text)}
+    candidates: list[tuple[int, str, str]] = []
     tracked = run(["git", "ls-files"], root)
     for name in tracked.stdout.splitlines():
         path = root / name
@@ -71,9 +80,17 @@ def repository_context(root: Path, limit: int = 80_000) -> str:
             content = path.read_text(errors="replace")
         except OSError:
             continue
+        haystack = f"{name}\n{content}".lower()
+        score = sum(20 for keyword in keywords if keyword in haystack)
+        if any(part in path.name.lower() for part in ("type", "schema", "model", "enum")):
+            score += 15
+        if name in preferred:
+            score += 10_000
+        candidates.append((score, name, content))
+    for _, name, content in sorted(candidates, key=lambda item: (-item[0], item[1])):
         block = f"\n--- {name} ---\n{content}"
         if size + len(block) > limit:
-            break
+            continue
         chunks.append(block)
         size += len(block)
     return "".join(chunks)
@@ -271,12 +288,36 @@ def process_queued(client, run_row: dict):
     completed_attempts = 0
     for attempt in range(1, MAX_ATTEMPTS + 1):
         client.table("agent_runs").update({"attempt_number": attempt}).eq("id", run_row["id"]).execute()
+        context = repository_context(worktree, task)
         proposal = adapter.prepare_patch(
             task,
-            repository_context(worktree),
+            context,
             attempt=attempt,
             check_failure=check_failure,
         )
+        missing_related = [
+            path
+            for path in proposal.analysis.related_files
+            if f"--- {path} ---" not in context and (worktree / path).is_file()
+        ]
+        if not proposal.analysis.can_prepare_patch and missing_related:
+            log_step(
+                client,
+                run_row["id"],
+                sequence,
+                "inspect",
+                "completed",
+                attempt_number=attempt,
+                output_excerpt=f"補充模型要求的 Context：{', '.join(missing_related)}",
+            )
+            sequence += 1
+            context = repository_context(worktree, task, preferred_paths=missing_related)
+            proposal = adapter.prepare_patch(
+                task,
+                context,
+                attempt=attempt,
+                check_failure={"stage": "context_retrieval", "missing_files": missing_related},
+            )
         completed_attempts = attempt
         client.table("artifacts").insert(
             {

@@ -21,11 +21,17 @@ class ModelAdapter:
     ) -> PatchProposal:
         retry_instruction = ""
         if check_failure:
-            retry_instruction = (
-                " This is a repair attempt after the previous patch failed a configured check. "
-                "Use the failure output as diagnostic evidence, keep the task scope unchanged, and return complete "
-                "replacement content only for files that need correction. Do not disable or weaken tests."
-            )
+            if check_failure.get("stage") == "context_retrieval":
+                retry_instruction = (
+                    " Files requested by your prior analysis are now included in repository_context. "
+                    "Re-evaluate the complete change and prepare the patch if it is now safe."
+                )
+            else:
+                retry_instruction = (
+                    " This is a repair attempt after the previous patch failed a configured check. "
+                    "Use the failure output as diagnostic evidence, keep the task scope unchanged, and return complete "
+                    "replacement content only for files that need correction. Do not disable or weaken tests."
+                )
         response = self.client.responses.parse(
             model=self.model,
             input=[
