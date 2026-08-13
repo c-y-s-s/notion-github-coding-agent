@@ -1,5 +1,5 @@
 import { failure, ok } from "@/lib/http";
-import { updateNotionTask } from "@/lib/notion";
+import { findNotionSprintAlias, updateNotionTask } from "@/lib/notion";
 import { taskPlanningSchema } from "@/lib/schemas";
 import { adminDb } from "@/lib/supabase";
 
@@ -21,10 +21,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!task) return failure("找不到任務", 404);
   if (task.notion_page_id && !task.notion_page_url) return failure("原始 Notion Task 已刪除，無法更新", 409);
   let sprintPageId: string | null = null;
+  let sprintAliasPageId: string | null = null;
   if (parsed.data.sprintId) {
-    const { data: sprint } = await db.from("sprints").select("notion_page_id").eq("id", parsed.data.sprintId).eq("project_id", task.project_id).maybeSingle();
+    const [{ data: sprint }, { data: sprints }, { data: project }] = await Promise.all([
+      db.from("sprints").select("id,notion_page_id").eq("id", parsed.data.sprintId).eq("project_id", task.project_id).maybeSingle(),
+      db.from("sprints").select("id,start_date,status").eq("project_id", task.project_id).order("start_date"),
+      db.from("projects").select("notion_sprint_data_source_id").eq("id", task.project_id).maybeSingle(),
+    ]);
     if (!sprint) return failure("找不到這個 Sprint", 404);
     sprintPageId = sprint.notion_page_id;
+    const currentIndex = (sprints ?? []).findIndex(item => item.status === "active");
+    const selectedIndex = (sprints ?? []).findIndex(item => item.id === sprint.id);
+    const alias = selectedIndex === currentIndex ? "current" : selectedIndex === currentIndex - 1 ? "last" : selectedIndex === currentIndex + 1 ? "next" : null;
+    if (alias && project?.notion_sprint_data_source_id) sprintAliasPageId = await findNotionSprintAlias(project.notion_sprint_data_source_id, alias);
   }
   const next = { planning_status: parsed.data.planningStatus, deadline: parsed.data.deadline, sprint_id: parsed.data.sprintId };
   const updated = await db.from("work_items").update(next).eq("id", id);
@@ -34,7 +43,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       await updateNotionTask(task.notion_page_id, {
         "Planning Status": { status: { name: notionStatuses[parsed.data.planningStatus] } },
         Deadline: parsed.data.deadline ? { date: { start: parsed.data.deadline } } : { date: null },
-        Sprint: { relation: sprintPageId ? [{ id: sprintPageId }] : [] },
+        Sprint: { relation: [sprintPageId, sprintAliasPageId].filter(Boolean).map(id => ({ id })) },
         "Last Synced At": { date: { start: new Date().toISOString() } },
       });
     }

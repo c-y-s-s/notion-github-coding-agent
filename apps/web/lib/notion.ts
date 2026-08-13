@@ -20,7 +20,7 @@ export function notionPageFields(page: Record<string, any>) {
     acceptance_criteria: plainText(properties["Acceptance Criteria"]?.rich_text),
     planning_status: planningAliases[rawPlanningName] ?? "draft",
     deadline: properties.Deadline?.date?.start?.slice(0, 10) ?? null,
-    sprint_notion_page_id: properties.Sprint?.relation?.[0]?.id ?? null,
+    sprint_notion_page_ids: (properties.Sprint?.relation ?? []).map((relation: { id: string }) => relation.id),
   };
 }
 
@@ -56,3 +56,15 @@ export async function createNotionTask(input: { dataSourceId: string; title: str
   if(!response.ok) throw new Error(`Notion create page failed: ${response.status} ${await response.text()}`); return response.json() as Promise<{id:string;url:string}>;
 }
 export async function updateNotionTask(pageId:string, properties:Record<string,unknown>) { if(!process.env.NOTION_TOKEN) throw new Error("NOTION_TOKEN is not configured"); const response=await fetch(`https://api.notion.com/v1/pages/${pageId}`,{method:"PATCH",headers:{Authorization:`Bearer ${process.env.NOTION_TOKEN}`,"Notion-Version":"2025-09-03","Content-Type":"application/json"},body:JSON.stringify({properties})});if(!response.ok)throw new Error(`Notion update failed: ${response.status}`);return response.json(); }
+
+export async function findNotionSprintAlias(dataSourceId: string, alias: "last" | "current" | "next") {
+  if (!process.env.NOTION_TOKEN) throw new Error("NOTION_TOKEN is not configured");
+  const response = await fetch(`https://api.notion.com/v1/data_sources/${dataSourceId}/query`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.NOTION_TOKEN}`, "Notion-Version": "2025-09-03", "Content-Type": "application/json" },
+    body: JSON.stringify({ filter: { property: "Week Key", rich_text: { equals: `alias-${alias}` } }, page_size: 1 }),
+  });
+  if (!response.ok) throw new Error(`Notion alias lookup failed: ${response.status}`);
+  const body = await response.json() as { results?: Array<{ id: string }> };
+  return body.results?.[0]?.id ?? null;
+}
