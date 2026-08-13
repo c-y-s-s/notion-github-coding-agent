@@ -82,8 +82,8 @@ export async function listSyncEvents(): Promise<SyncEvent[]> {
 }
 export async function getRun(id: string) {
   noStore();
-  if (!hasSupabaseEnv()) return { run: demoRuns.find(x => x.id === id) ?? demoRuns[0], steps: [], artifacts: [{ id:"demo-artifact", type:"diff", content:"示範模式：設定 Supabase 並啟動 Worker 後，即可產生真實的程式碼修改。", metadata:{} }], evaluation: null };
-  const db = adminDb(); const [{data:run,error},{data:steps},{data:artifacts},{data:evaluation}] = await Promise.all([db.from("agent_runs").select("*").eq("id",id).single(),db.from("agent_run_steps").select("*").eq("agent_run_id",id).order("sequence"),db.from("artifacts").select("*").eq("agent_run_id",id).order("created_at"),db.from("agent_evaluations").select("*").eq("agent_run_id",id).maybeSingle()]); if(error) throw serviceError("讀取 Agent 執行詳情失敗", error); return {run,steps:steps??[],artifacts:artifacts??[],evaluation};
+  if (!hasSupabaseEnv()) return { run: demoRuns.find(x => x.id === id) ?? demoRuns[0], steps: [], artifacts: [{ id:"demo-artifact", type:"diff", content:"示範模式：設定 Supabase 並啟動 Worker 後，即可產生真實的程式碼修改。", metadata:{} }], evaluation: null, related: [] };
+  const db = adminDb(); const [{data:run,error},{data:steps},{data:artifacts},{data:evaluation}] = await Promise.all([db.from("agent_runs").select("*").eq("id",id).single(),db.from("agent_run_steps").select("*").eq("agent_run_id",id).order("sequence"),db.from("artifacts").select("*").eq("agent_run_id",id).order("created_at"),db.from("agent_evaluations").select("*").eq("agent_run_id",id).maybeSingle()]); if(error) throw serviceError("讀取 Agent 執行詳情失敗", error); const relatedIds = [run.parent_run_id, run.id].filter(Boolean); const { data: related } = await db.from("agent_runs").select("id,parent_run_id,replay_mode,status,model,prompt_version,base_commit_sha,attempt_number,token_usage,started_at,finished_at,error_code").or(`id.in.(${relatedIds.join(",")}),parent_run_id.eq.${run.parent_run_id ?? run.id}`).order("created_at"); return {run,steps:steps??[],artifacts:artifacts??[],evaluation,related:related??[]};
 }
 
 export async function getTaskDetail(id: string) {

@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import os
 import re
 import socket
@@ -102,6 +103,24 @@ def repository_context(
 
 def context_files(context: str) -> list[str]:
     return [line[4:-4] for line in context.splitlines() if line.startswith("--- ") and line.endswith(" ---")]
+
+
+def build_context_manifest(root: Path, paths: list[str]) -> list[dict]:
+    manifest = []
+    for name in paths:
+        path = root / name
+        if path.is_file():
+            manifest.append({"path": name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+    return manifest
+
+
+def replay_context(root: Path, task: dict, manifest: list[dict]) -> tuple[str, dict]:
+    paths = [item["path"] for item in manifest]
+    actual = build_context_manifest(root, paths)
+    if actual != manifest:
+        raise RuntimeError("Exact Replay context hash mismatch; repository snapshot is not reproducible")
+    context = repository_context(root, task, limit=40_000, preferred_paths=paths, allowed_paths=set(paths))
+    return context, {"method": "exact_replay", "selected_files": paths, "duration_ms": 0, "fallback_reason": None}
 
 
 def verify_evidence(context: str, evidence: list) -> list:
@@ -269,12 +288,17 @@ def cleanup_rejected_branches(client):
 
 
 def process_queued(client, run_row: dict):
-    task = client.table("work_items").select("*").eq("id", run_row["work_item_id"]).single().execute().data
+    task = run_row.get("task_snapshot") or client.table("work_items").select("*").eq("id", run_row["work_item_id"]).single().execute().data
     repo = client.table("repositories").select("*").eq("id", run_row["repository_id"]).single().execute().data
     root = Path(repo["local_path"]).resolve()
     if not (root / ".git").exists():
         return fail(client, run_row, "INVALID_REPOSITORY", "Configured path is not a Git repository")
-    sha = fetch_branch(root, repo["default_branch"])
+    if run_row.get("replay_mode") == "exact":
+        sha = run_row.get("base_commit_sha")
+        if not sha or run(["git", "cat-file", "-e", f"{sha}^{{commit}}"], root).returncode:
+            return fail(client, run_row, "REPLAY_COMMIT_MISSING", "Exact Replay 的原始 commit 已不存在。")
+    else:
+        sha = fetch_branch(root, repo["default_branch"])
     worktree = root.parent / ".agent-worktrees" / run_row["id"]
     client.table("agent_runs").update(
         {
@@ -312,7 +336,7 @@ def process_queued(client, run_row: dict):
         sequence += 1
         if result.returncode:
             return fail(client, run_row, "BASELINE_FAILED", "Baseline checks failed; no patch was generated")
-    adapter = ModelAdapter(run_row["model"])
+    adapter = ModelAdapter(run_row["model"], run_row["prompt_version"])
     check_failure = None
     previous_signature = None
     final_proposal = None
@@ -321,7 +345,10 @@ def process_queued(client, run_row: dict):
     model_calls: list[dict] = []
     from .retrieval import retrieve_context
 
-    context, retrieval = retrieve_context(client, repo["id"], sha, worktree, task)
+    if run_row.get("replay_mode") == "exact":
+        context, retrieval = replay_context(worktree, task, run_row.get("context_manifest") or [])
+    else:
+        context, retrieval = retrieve_context(client, repo["id"], sha, worktree, task)
     log_step(
         client,
         run_row["id"],
@@ -374,6 +401,8 @@ def process_queued(client, run_row: dict):
                 {"token_usage": {"calls": model_calls, "totals": totals, "estimated_cost_usd": estimate_cost_usd(adapter.model, totals)}}
             ).eq("id", run_row["id"]).execute()
         proposal.analysis.evidence = verify_evidence(context, proposal.analysis.evidence)
+        manifest = build_context_manifest(worktree, context_files(context))
+        client.table("agent_runs").update({"context_manifest": manifest, "task_snapshot": task}).eq("id", run_row["id"]).execute()
         completed_attempts = attempt
         client.table("artifacts").insert(
             {
@@ -386,6 +415,7 @@ def process_queued(client, run_row: dict):
                     "context_chars": len(context),
                     "model_call": adapter.last_call,
                     "retrieval": retrieval,
+                    "context_manifest": manifest,
                 },
             }
         ).execute()

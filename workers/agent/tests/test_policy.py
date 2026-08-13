@@ -6,6 +6,7 @@ from agent_worker.models import CodeEvidence
 from agent_worker.policy import validate_changed_files
 from agent_worker.worker import (
     branch_slug,
+    build_context_manifest,
     error_signature,
     is_no_change_outcome,
     repository_context,
@@ -108,3 +109,13 @@ def test_verify_evidence_checks_path_lines_and_exact_quote():
     checked = verify_evidence(context, [valid, wrong_line, missing])
 
     assert [item.verified for item in checked] == [True, False, False]
+
+
+def test_context_manifest_detects_source_changes(tmp_path: Path):
+    source = tmp_path / "src.js"
+    source.write_text("export const value = 1\n")
+    before = build_context_manifest(tmp_path, ["src.js"])
+    source.write_text("export const value = 2\n")
+    after = build_context_manifest(tmp_path, ["src.js"])
+    assert before[0]["path"] == after[0]["path"]
+    assert before[0]["sha256"] != after[0]["sha256"]

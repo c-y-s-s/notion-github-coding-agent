@@ -244,6 +244,11 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .ranked-files { min-width: 170px; margin: 0; padding-left: 20px; color: var(--muted); font: 11px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .ranked-files .hit { color: var(--green); font-weight: 700; }
 .limitation-card { border-color: #efdfbf; background: #fffcf5; }
+.replay-form { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px; }
+.replay-form label { display: grid; gap: 5px; color: var(--muted); font-size: 11px; font-weight: 650; }
+.replay-form select { min-width: 180px; padding: 8px 9px; border: 1px solid var(--border); border-radius: 6px; background: white; }
+.replay-message { width: 100%; color: var(--red); }
+.replay-table { margin-top: 18px; }
 .evaluation-heading { margin-top: 42px; }
 .evaluation-heading h2 { margin: 2px 0 4px; }
 .metric.small { font-size: 22px; }
