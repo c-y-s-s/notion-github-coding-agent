@@ -184,6 +184,16 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .form-field select, .form-field textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; background: white; color: var(--text); font: inherit; }
 .failure-bars { display: grid; gap: 8px; }
 .failure-row { display: flex; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; }
+.benchmark-hero { padding: 20px; border: 1px solid #cfe8dc; border-radius: 8px; background: #f5fbf8; }
+.benchmark-hero .section-heading { margin-bottom: 18px; }
+.benchmark-hero h2 { margin-bottom: 3px; }
+.benchmark-metrics { margin-bottom: 12px; }
+.benchmark-metrics .card { background: white; box-shadow: none; }
+.benchmark-note { margin: 0; color: #637166; font-size: 12px; }
+.benchmark-table td:first-child { min-width: 240px; }
+.benchmark-table td small { display: block; margin-top: 3px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.evaluation-heading { margin-top: 42px; }
+.evaluation-heading h2 { margin: 2px 0 4px; }
 @media (max-width: 700px) { .evaluation-grid { grid-template-columns: 1fr; } }
 .step-error { margin-top: 7px; color: var(--red); }
 .step-error summary { cursor: pointer; font-size: 12px; }
