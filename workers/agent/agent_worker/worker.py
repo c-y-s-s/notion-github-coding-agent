@@ -9,6 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from supabase import create_client
 
+from .costs import estimate_cost_usd
 from .git_ops import (
     base_sha,
     changed_files,
@@ -94,6 +95,19 @@ def repository_context(
         chunks.append(block)
         size += len(block)
     return "".join(chunks)
+
+
+def context_files(context: str) -> list[str]:
+    return [line[4:-4] for line in context.splitlines() if line.startswith("--- ") and line.endswith(" ---")]
+
+
+def token_totals(calls: list[dict]) -> dict:
+    totals: dict[str, int] = {}
+    for call in calls:
+        for key, value in call.get("usage", {}).items():
+            if isinstance(value, int):
+                totals[key] = totals.get(key, 0) + value
+    return totals
 
 
 def fail(client, run: dict, code: str, message: str, risk="medium"):
@@ -286,6 +300,7 @@ def process_queued(client, run_row: dict):
     final_proposal = None
     final_actual: list[str] = []
     completed_attempts = 0
+    model_calls: list[dict] = []
     for attempt in range(1, MAX_ATTEMPTS + 1):
         client.table("agent_runs").update({"attempt_number": attempt}).eq("id", run_row["id"]).execute()
         context = repository_context(worktree, task)
@@ -295,6 +310,11 @@ def process_queued(client, run_row: dict):
             attempt=attempt,
             check_failure=check_failure,
         )
+        model_calls.append(adapter.last_call)
+        totals = token_totals(model_calls)
+        client.table("agent_runs").update(
+            {"token_usage": {"calls": model_calls, "totals": totals, "estimated_cost_usd": estimate_cost_usd(adapter.model, totals)}}
+        ).eq("id", run_row["id"]).execute()
         missing_related = [
             path
             for path in proposal.analysis.related_files
@@ -318,13 +338,23 @@ def process_queued(client, run_row: dict):
                 attempt=attempt,
                 check_failure={"stage": "context_retrieval", "missing_files": missing_related},
             )
+            model_calls.append(adapter.last_call)
+            totals = token_totals(model_calls)
+            client.table("agent_runs").update(
+                {"token_usage": {"calls": model_calls, "totals": totals, "estimated_cost_usd": estimate_cost_usd(adapter.model, totals)}}
+            ).eq("id", run_row["id"]).execute()
         completed_attempts = attempt
         client.table("artifacts").insert(
             {
                 "agent_run_id": run_row["id"],
                 "type": "analysis",
                 "content": proposal.analysis.model_dump_json(),
-                "metadata": {"attempt": attempt},
+                "metadata": {
+                    "attempt": attempt,
+                    "context_files": context_files(context),
+                    "context_chars": len(context),
+                    "model_call": adapter.last_call,
+                },
             }
         ).execute()
         log_step(client, run_row["id"], sequence, "plan", "completed", attempt_number=attempt)
@@ -483,6 +513,25 @@ def main():
         client.table("worker_heartbeats").upsert(
             {"worker_id": worker_id, "last_seen_at": now(), "metadata": {"pid": os.getpid()}}
         ).execute()
+        benchmark_rows = (
+            client.table("benchmark_runs")
+            .select("*")
+            .eq("status", "queued")
+            .order("created_at")
+            .limit(1)
+            .execute()
+            .data
+        )
+        if benchmark_rows:
+            from .eval_runner import process_benchmark_run
+
+            benchmark = benchmark_rows[0]
+            try:
+                process_benchmark_run(client, benchmark)
+            except (OSError, RuntimeError, ValueError, TimeoutError) as exc:
+                client.table("benchmark_runs").update(
+                    {"status": "failed", "error_message": str(exc), "finished_at": now()}
+                ).eq("id", benchmark["id"]).execute()
         rows = (
             client.table("agent_runs")
             .select("*")
@@ -492,7 +541,7 @@ def main():
             .execute()
             .data
         )
-        if rows:
+        if rows and not benchmark_rows:
             item = rows[0]
             try:
                 process_approved(client, item) if item["status"] == "approved" else process_queued(

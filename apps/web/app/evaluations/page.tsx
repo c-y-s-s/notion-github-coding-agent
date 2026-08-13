@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { listEvaluations } from "@/lib/data";
+import { listBenchmarkRuns, listEvaluations } from "@/lib/data";
 import { StatusBadge } from "@/components/status-badge";
 import { getBenchmarkData } from "@/lib/benchmark-data";
+import { BenchmarkRunForm } from "@/components/benchmark-run-form";
+import { estimatedCost, formatCost } from "@/lib/model-costs";
 
 const categoryLabels: Record<string, string> = { wrong_analysis: "分析方向錯誤", missing_context: "缺少程式碼背景", bad_patch: "Patch 不符合需求", checks_failed: "檢查無法通過", unsafe_scope: "修改範圍不安全", other: "其他" };
 
 export default async function EvaluationsPage() {
-  const evaluations = await listEvaluations();
+  const [evaluations, benchmarkRuns] = await Promise.all([listEvaluations(), listBenchmarkRuns()]);
   const benchmark = getBenchmarkData();
   const analyzed = evaluations.length;
   const patchRated = evaluations.filter(item => item.patch_usable !== null);
@@ -20,9 +22,12 @@ export default async function EvaluationsPage() {
       <div className="section-heading"><div><h2>固定測試集</h2><p className="muted">Dataset v{benchmark.dataset.version} · {benchmark.report.model} · Prompt {benchmark.report.prompt_version}</p></div><StatusBadge value={benchmark.report.summary.passed === benchmark.report.summary.total ? "benchmark_pass" : "benchmark_fail"} /></div>
       <div className="grid benchmark-metrics"><div className="card"><span className="muted">測試案例</span><div className="metric">{benchmark.report.summary.total}</div></div><div className="card"><span className="muted">整體通過率</span><div className="metric">{percent(benchmark.report.summary.pass_rate)}</div></div><div className="card"><span className="muted">Patch 成功率</span><div className="metric">{percent(benchmark.report.summary.patch_success_rate)}</div></div><div className="card"><span className="muted">安全拒絕率</span><div className="metric">{percent(benchmark.report.summary.safe_refusal_rate)}</div></div></div>
       <p className="benchmark-note">這是固定 regression dataset 的結果，不代表真實世界準確率。最新執行：{formatBenchmarkTime(benchmark.report.created_at)}</p>
+      <BenchmarkRunForm defaultModel={benchmark.report.model} />
     </section>
 
-    <section className="section card"><div className="section-heading"><div><h2>測試案例結果</h2><p className="muted">Patch 案例必須修改正確檔案並通過 hidden test；拒絕案例不得產生任何修改。</p></div></div><div className="table-scroll"><table className="table benchmark-table"><thead><tr><th>案例</th><th>類型</th><th>預期</th><th>結果</th><th>風險</th><th>耗時</th></tr></thead><tbody>{benchmark.cases.map(testCase => <tr key={testCase.id}><td><strong>{testCase.name}</strong><small>{testCase.id}</small></td><td>{benchmarkCategory(testCase.category)}</td><td>{testCase.expected.can_prepare_patch ? "產生 Patch" : "安全拒絕"}</td><td><StatusBadge value={testCase.result?.passed ? "benchmark_pass" : "benchmark_fail"} /></td><td>{testCase.result?.analysis?.risk_level ? <StatusBadge value={testCase.result.analysis.risk_level} /> : "—"}</td><td>{testCase.result?.duration_ms ? `${(testCase.result.duration_ms / 1000).toFixed(1)} 秒` : "—"}</td></tr>)}</tbody></table></div></section>
+    {benchmarkRuns.length > 0 && <section className="section card"><div className="section-heading"><div><h2>模型／Prompt 比較</h2><p className="muted">同一 Dataset 版本才適合直接比較；成本為目前公開費率估算。</p></div></div><div className="table-scroll"><table className="table"><thead><tr><th>模型</th><th>Prompt</th><th>版本</th><th>狀態</th><th>通過</th><th>Patch</th><th>拒絕</th><th>Tokens</th><th>估算成本</th></tr></thead><tbody>{benchmarkRuns.map(run => <tr key={run.id}><td><strong>{run.model}</strong></td><td>{run.prompt_version}</td><td>{run.dataset_version}</td><td><StatusBadge value={run.status} /></td><td>{run.pass_rate === null ? "—" : percent(Number(run.pass_rate))}</td><td>{run.patch_success_rate === null ? "—" : percent(Number(run.patch_success_rate))}</td><td>{run.safe_refusal_rate === null ? "—" : percent(Number(run.safe_refusal_rate))}</td><td>{run.token_usage?.total_tokens ?? "—"}</td><td>{formatCost(estimatedCost(run.model, run.token_usage))}</td></tr>)}</tbody></table></div></section>}
+
+    <section className="section card"><div className="section-heading"><div><h2>測試案例結果</h2><p className="muted">Patch 案例必須修改正確檔案並通過 hidden test；拒絕案例不得產生任何修改。</p></div></div><div className="table-scroll"><table className="table benchmark-table"><thead><tr><th>案例</th><th>類型</th><th>預期</th><th>結果</th><th>風險</th><th>耗時</th></tr></thead><tbody>{benchmark.cases.map(testCase => <tr key={testCase.id}><td><Link href={`/evaluations/cases/${testCase.id}`}><strong>{testCase.name}</strong></Link><small>{testCase.id}</small></td><td>{benchmarkCategory(testCase.category)}</td><td>{testCase.expected.can_prepare_patch ? "產生 Patch" : "安全拒絕"}</td><td>{testCase.result ? <StatusBadge value={testCase.result.passed ? "benchmark_pass" : "benchmark_fail"} /> : <span className="muted">尚未執行</span>}</td><td>{testCase.result?.analysis?.risk_level ? <StatusBadge value={testCase.result.analysis.risk_level} /> : "—"}</td><td>{testCase.result?.duration_ms ? `${(testCase.result.duration_ms / 1000).toFixed(1)} 秒` : "—"}</td></tr>)}</tbody></table></div></section>
 
     <div className="section-heading evaluation-heading"><div><div className="eyebrow">真實任務標註</div><h2>人工評估</h2><p className="muted">由使用者判斷實際 Run 的分析正確性與 Patch 可用性。</p></div></div>
     <div className="grid"><div className="card"><span className="muted">已評估樣本</span><div className="metric">{analyzed}</div></div><div className="card"><span className="muted">分析正確率</span><div className="metric">{rate(correct, analyzed)}</div></div><div className="card"><span className="muted">Patch 可用率</span><div className="metric">{rate(usable, patchRated.length)}</div></div><div className="card"><span className="muted">尚未評 Patch</span><div className="metric">{analyzed - patchRated.length}</div></div></div>

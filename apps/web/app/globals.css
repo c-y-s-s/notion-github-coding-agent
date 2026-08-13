@@ -190,10 +190,15 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .benchmark-metrics { margin-bottom: 12px; }
 .benchmark-metrics .card { background: white; box-shadow: none; }
 .benchmark-note { margin: 0; color: #637166; font-size: 12px; }
+.benchmark-run-form { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #dbece3; }
+.benchmark-run-form label { display: grid; gap: 5px; color: #53615a; font-size: 11px; font-weight: 650; }
+.benchmark-run-form input, .benchmark-run-form select { min-width: 150px; padding: 8px 9px; border: 1px solid var(--border); border-radius: 6px; background: white; color: var(--text); }
 .benchmark-table td:first-child { min-width: 240px; }
 .benchmark-table td small { display: block; margin-top: 3px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .evaluation-heading { margin-top: 42px; }
 .evaluation-heading h2 { margin: 2px 0 4px; }
+.metric.small { font-size: 22px; }
+.observability-files { margin-top: 18px; }
 @media (max-width: 700px) { .evaluation-grid { grid-template-columns: 1fr; } }
 .step-error { margin-top: 7px; color: var(--red); }
 .step-error summary { cursor: pointer; font-size: 12px; }

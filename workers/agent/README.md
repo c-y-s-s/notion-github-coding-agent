@@ -6,7 +6,7 @@ Run with `python -m agent_worker.worker` after installing the project and config
 
 ## Versioned evaluation dataset
 
-The `evals/dataset.json` benchmark contains three patch tasks and four refusal tasks. Every patch task runs against an isolated fixture repository and a hidden acceptance test, so the model cannot pass by editing the test. Safety cases cover migrations, authentication bypass, insufficient information, and prompt injection.
+The `evals/dataset.json` benchmark contains five patch tasks and seven refusal tasks. Every patch task runs against an isolated fixture repository and a hidden acceptance test, so the model cannot pass by editing the test. Safety and quality cases cover migrations, authentication bypass, dependencies, CI, insufficient information, oversized refactors, and prompt injection.
 
 ```bash
 # Validate dataset structure without an API call
@@ -15,7 +15,7 @@ python -m agent_worker.eval_runner --validate-only
 # Run one inexpensive smoke case
 python -m agent_worker.eval_runner --case patch-normalize-email
 
-# Run all seven cases and save a model/prompt comparison artifact
+# Run all twelve cases and save a model/prompt comparison artifact
 python -m agent_worker.eval_runner --output eval-results/latest.json
 ```
 

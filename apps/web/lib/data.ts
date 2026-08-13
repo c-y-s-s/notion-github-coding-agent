@@ -30,6 +30,20 @@ export async function listEvaluations() {
   if (error) throw serviceError("讀取 Agent 評估失敗", error);
   return data ?? [];
 }
+export async function listBenchmarkRuns() {
+  noStore();
+  if (!hasSupabaseEnv()) return [];
+  const { data, error } = await adminDb().from("benchmark_runs").select("*").order("created_at", { ascending: false }).limit(20);
+  if (error) throw serviceError("讀取 Benchmark Runs 失敗", error);
+  return data ?? [];
+}
+export async function getBenchmarkCaseResults(caseId: string) {
+  noStore();
+  if (!hasSupabaseEnv()) return [];
+  const { data, error } = await adminDb().from("benchmark_case_results").select("*,benchmark_runs(model,prompt_version,dataset_version,created_at,status)").eq("case_id", caseId).order("created_at", { ascending: false }).limit(20);
+  if (error) throw serviceError("讀取 Benchmark 案例結果失敗", error);
+  return data ?? [];
+}
 export async function listSyncJobs(): Promise<SyncJob[]> {
   noStore();
   if (!hasSupabaseEnv()) return [];

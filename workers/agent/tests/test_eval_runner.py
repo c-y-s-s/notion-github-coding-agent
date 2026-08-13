@@ -23,9 +23,9 @@ def proposal(can_patch: bool, risk: str, edits: list[FileEdit] | None = None) ->
 def test_dataset_is_valid_and_balanced():
     dataset = load_dataset()
     assert validate_dataset(dataset) == []
-    assert len(dataset.cases) == 7
-    assert sum(case.category == "patch" for case in dataset.cases) == 3
-    assert sum(case.category != "patch" for case in dataset.cases) == 4
+    assert len(dataset.cases) == 12
+    assert sum(case.category == "patch" for case in dataset.cases) == 5
+    assert sum(case.category != "patch" for case in dataset.cases) == 7
 
 
 def test_patch_case_runs_hidden_acceptance_test(tmp_path: Path):

@@ -11,6 +11,7 @@ from typing import Literal
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
+from .costs import estimate_cost_usd
 from .git_ops import run, shell
 from .llm import ModelAdapter
 from .models import PatchProposal
@@ -132,8 +133,10 @@ def run_case(case: EvalCase, adapter: ModelAdapter) -> dict:
         if baseline.returncode:
             raise RuntimeError(f"fixture baseline failed: {(baseline.stdout + baseline.stderr)[-2000:]}")
         task = {**case.task.model_dump(), "type": "bug"}
-        proposal = adapter.prepare_patch(task, repository_context(fixture, task))
+        context = repository_context(fixture, task)
+        proposal = adapter.prepare_patch(task, context)
         grade = grade_case(case, proposal, fixture)
+        context_files = [line[4:-4] for line in context.splitlines() if line.startswith("--- ") and line.endswith(" ---")]
         return {
             "id": case.id,
             "name": case.name,
@@ -141,18 +144,23 @@ def run_case(case: EvalCase, adapter: ModelAdapter) -> dict:
             "duration_ms": round((time.monotonic() - started) * 1000),
             "analysis": proposal.analysis.model_dump(),
             "edited_files": [edit.path for edit in proposal.edits],
+            "usage": adapter.last_call.get("usage", {}),
+            "model_duration_ms": adapter.last_call.get("duration_ms"),
+            "context_files": context_files,
+            "context_chars": len(context),
             **grade,
+            "failure_category": failure_category(grade),
         }
 
 
-def build_report(dataset: EvalDataset, model: str, results: list[dict]) -> dict:
+def build_report(dataset: EvalDataset, model: str, results: list[dict], prompt_version: str = "v1") -> dict:
     patch = [result for result in results if result["category"] == "patch"]
     refusals = [result for result in results if result["category"] != "patch"]
     passed = sum(result["passed"] for result in results)
     return {
         "dataset_version": dataset.version,
         "model": model,
-        "prompt_version": "v1",
+        "prompt_version": prompt_version,
         "created_at": datetime.now(UTC).isoformat(),
         "summary": {
             "total": len(results),
@@ -169,10 +177,91 @@ def rate(results: list[dict]) -> float | None:
     return round(sum(result["passed"] for result in results) / len(results), 4) if results else None
 
 
+def token_totals(results: list[dict]) -> dict:
+    totals: dict[str, int] = {}
+    for result in results:
+        for key, value in result.get("usage", {}).items():
+            if isinstance(value, int):
+                totals[key] = totals.get(key, 0) + value
+    return totals
+
+
+def failure_category(grade: dict) -> str | None:
+    if grade["passed"]:
+        return None
+    checks = grade["checks"]
+    if not checks["decision"]["passed"]:
+        return "wrong_decision"
+    if not checks["risk"]["passed"]:
+        return "risk_mismatch"
+    if not checks["files"]["passed"]:
+        return "file_scope"
+    if "acceptance" in checks and not checks["acceptance"]["passed"]:
+        return "acceptance_failed"
+    return "runtime_error"
+
+
+def process_benchmark_run(client, row: dict) -> dict:
+    dataset = load_dataset()
+    selected_ids = set(row.get("selected_case_ids") or [])
+    selected = [case for case in dataset.cases if not selected_ids or case.id in selected_ids]
+    client.table("benchmark_runs").update(
+        {"status": "running", "started_at": datetime.now(UTC).isoformat(), "total": len(selected)}
+    ).eq("id", row["id"]).execute()
+    adapter = ModelAdapter(row["model"], row["prompt_version"])
+    results: list[dict] = []
+    for case in selected:
+        try:
+            result = run_case(case, adapter)
+        except Exception as error:  # noqa: BLE001 - preserve every case result in a batch
+            result = {
+                "id": case.id,
+                "name": case.name,
+                "category": case.category,
+                "passed": False,
+                "failure_category": "runtime_error",
+                "error": str(error),
+            }
+        results.append(result)
+        client.table("benchmark_case_results").upsert(
+            {
+                "benchmark_run_id": row["id"],
+                "case_id": case.id,
+                "name": case.name,
+                "category": case.category,
+                "passed": result["passed"],
+                "failure_category": result.get("failure_category"),
+                "duration_ms": result.get("duration_ms"),
+                "model_duration_ms": result.get("model_duration_ms"),
+                "analysis": result.get("analysis"),
+                "edited_files": result.get("edited_files", []),
+                "checks": result.get("checks", {}),
+                "token_usage": result.get("usage", {}),
+                "context_files": result.get("context_files", []),
+                "context_chars": result.get("context_chars", 0),
+                "error_message": result.get("error"),
+            },
+            on_conflict="benchmark_run_id,case_id",
+        ).execute()
+    report = build_report(dataset, row["model"], results, row["prompt_version"])
+    totals = token_totals(results)
+    estimated_cost = estimate_cost_usd(row["model"], totals)
+    client.table("benchmark_runs").update(
+        {
+            "status": "succeeded",
+            **report["summary"],
+            "token_usage": {**totals, "estimated_cost_usd": estimated_cost},
+            "finished_at": datetime.now(UTC).isoformat(),
+        }
+    ).eq("id", row["id"]).execute()
+    return report
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the versioned local Agent evaluation dataset")
     parser.add_argument("--case", action="append", dest="case_ids", help="Run only this case id; repeatable")
     parser.add_argument("--model", default=os.getenv("OPENAI_MODEL", "gpt-5-mini"))
+    parser.add_argument("--prompt-version", choices=["v1", "v2"], default="v1")
     parser.add_argument("--output", type=Path, help="Optional JSON report path")
     parser.add_argument("--validate-only", action="store_true")
     args = parser.parse_args()
@@ -193,7 +282,7 @@ def main() -> None:
     if not os.getenv("OPENAI_API_KEY"):
         raise SystemExit("OPENAI_API_KEY is required unless --validate-only is used")
 
-    adapter = ModelAdapter(args.model)
+    adapter = ModelAdapter(args.model, args.prompt_version)
     results: list[dict] = []
     for case in selected:
         try:
@@ -208,7 +297,7 @@ def main() -> None:
             }
         results.append(result)
         print(f"{'PASS' if result['passed'] else 'FAIL'} {case.id}")
-    report = build_report(dataset, args.model, results)
+    report = build_report(dataset, args.model, results, args.prompt_version)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
