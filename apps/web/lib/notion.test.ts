@@ -11,11 +11,11 @@ describe("notionPageFields", () => {
       Sprint: { type: "relation", relation: [{ id: "sprint-page" }] },
       Description: { type: "rich_text", rich_text: [{ plain_text: "Login fails" }] },
       "Acceptance Criteria": { type: "rich_text", rich_text: [{ plain_text: "Test passes" }] },
-    } })).toEqual({ title: "Fix login", type: "bug", planning_status: "in_progress", description: "Login fails", acceptance_criteria: "Test passes", deadline: "2026-08-20", sprint_notion_page_ids: ["sprint-page"] });
+    } })).toEqual({ title: "Fix login", type: "bug", planning_status: "in_progress", description: "Login fails", acceptance_criteria: "Test passes", deadline: "2026-08-20", sprint_notion_page_id: "sprint-page" });
   });
 
   it("uses safe defaults for unsupported values", () => {
-    expect(notionPageFields({ properties: { Name: { type: "title", title: [] } } })).toEqual({ title: "Untitled", type: "unknown", planning_status: "draft", description: null, acceptance_criteria: null, deadline: null, sprint_notion_page_ids: [] });
+    expect(notionPageFields({ properties: { Name: { type: "title", title: [] } } })).toEqual({ title: "Untitled", type: "unknown", planning_status: "draft", description: null, acceptance_criteria: null, deadline: null, sprint_notion_page_id: null });
   });
 
   it("maps a sprint page", () => {

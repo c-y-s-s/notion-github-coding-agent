@@ -32,19 +32,15 @@ export async function POST(request: Request) {
     const { data: sprintProject } = await db.from("projects").select("id").eq("notion_sprint_data_source_id", dataSourceId).maybeSingle();
     if (sprintProject) {
       const fields = notionSprintFields(page);
-      if (fields.week_key.startsWith("alias-")) {
-        await completeEvent(db, eventId);
-        return ok({ accepted: true, alias: true }, 202);
-      }
       if (!fields.start_date || !fields.end_date) throw new Error("Sprint must have Start Date and End Date");
       await db.from("sprints").upsert({ project_id: sprintProject.id, ...fields, notion_page_id: page.id, notion_page_url: page.url }, { onConflict: "notion_page_id" });
     } else {
       const { data: project } = await db.from("projects").select("id,default_repository_id").eq("notion_data_source_id", dataSourceId).maybeSingle();
       if (project) {
-        const { sprint_notion_page_ids, ...fields } = notionPageFields(page);
+        const { sprint_notion_page_id, ...fields } = notionPageFields(page);
         let sprintId: string | null = null;
-        if (sprint_notion_page_ids.length) {
-          const { data: sprint } = await db.from("sprints").select("id").in("notion_page_id", sprint_notion_page_ids).limit(1).maybeSingle();
+        if (sprint_notion_page_id) {
+          const { data: sprint } = await db.from("sprints").select("id").eq("notion_page_id", sprint_notion_page_id).maybeSingle();
           sprintId = sprint?.id ?? null;
         }
         await db.from("work_items").upsert({ project_id: project.id, repository_id: project.default_repository_id, source: "notion", ...fields, sprint_id: sprintId, notion_page_id: page.id, notion_page_url: page.url, review_status: "not_required" }, { onConflict: "notion_page_id" });
