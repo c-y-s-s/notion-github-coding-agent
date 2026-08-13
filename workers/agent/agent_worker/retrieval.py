@@ -12,6 +12,16 @@ MAX_FILE_CHARS = 6_000
 CONTEXT_FILES = 12
 
 
+def lexical_rank(documents: list[dict], query: str, limit: int = CONTEXT_FILES) -> list[str]:
+    keywords = {word.lower() for word in re.findall(r"[A-Za-z][A-Za-z0-9_]{2,}", query)}
+    ranked = []
+    for document in documents:
+        haystack = f"{document['path']}\n{document['content']}".lower()
+        score = sum(1 for keyword in keywords if keyword in haystack)
+        ranked.append((score, document["path"]))
+    return [path for _, path in sorted(ranked, key=lambda item: (-item[0], item[1]))[:limit]]
+
+
 def tracked_documents(root: Path) -> list[dict]:
     from .git_ops import run
 

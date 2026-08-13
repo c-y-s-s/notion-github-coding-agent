@@ -1,0 +1,463 @@
+{
+  "dataset_version": "1.1.0",
+  "embedding_model": "text-embedding-3-small",
+  "k": 3,
+  "created_at": "2026-08-13T13:53:00.578368+00:00",
+  "summary": {
+    "keyword": {
+      "recall_at_k": 1.0,
+      "precision_at_k": 0.8056,
+      "mrr": 1.0,
+      "duration_ms": 0.0395,
+      "context_chars": 131.6667
+    },
+    "hybrid": {
+      "recall_at_k": 1.0,
+      "precision_at_k": 0.8056,
+      "mrr": 1.0,
+      "duration_ms": 838.6984,
+      "context_chars": 131.6667
+    }
+  },
+  "results": [
+    {
+      "case_id": "patch-cancelled-badge",
+      "name": "修正 cancelled 狀態顏色",
+      "category": "patch",
+      "expected_files": [
+        "status-badge.js"
+      ],
+      "document_count": 2,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.5,
+        "mrr": 1.0,
+        "hits": [
+          "status-badge.js"
+        ],
+        "selected": [
+          "status-badge.js",
+          "package.json"
+        ],
+        "duration_ms": 0.061,
+        "context_chars": 314
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.5,
+        "mrr": 1.0,
+        "hits": [
+          "status-badge.js"
+        ],
+        "selected": [
+          "status-badge.js",
+          "package.json"
+        ],
+        "duration_ms": 1377.525,
+        "context_chars": 314
+      }
+    },
+    {
+      "case_id": "patch-pagination-boundary",
+      "name": "修正分頁少一筆",
+      "category": "patch",
+      "expected_files": [
+        "pagination.js"
+      ],
+      "document_count": 2,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.5,
+        "mrr": 1.0,
+        "hits": [
+          "pagination.js"
+        ],
+        "selected": [
+          "pagination.js",
+          "package.json"
+        ],
+        "duration_ms": 0.024,
+        "context_chars": 193
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.5,
+        "mrr": 1.0,
+        "hits": [
+          "pagination.js"
+        ],
+        "selected": [
+          "pagination.js",
+          "package.json"
+        ],
+        "duration_ms": 764.668,
+        "context_chars": 193
+      }
+    },
+    {
+      "case_id": "patch-normalize-email",
+      "name": "修正 Email 正規化",
+      "category": "patch",
+      "expected_files": [
+        "normalize-email.js"
+      ],
+      "document_count": 2,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.5,
+        "mrr": 1.0,
+        "hits": [
+          "normalize-email.js"
+        ],
+        "selected": [
+          "normalize-email.js",
+          "package.json"
+        ],
+        "duration_ms": 0.029,
+        "context_chars": 123
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.5,
+        "mrr": 1.0,
+        "hits": [
+          "normalize-email.js"
+        ],
+        "selected": [
+          "normalize-email.js",
+          "package.json"
+        ],
+        "duration_ms": 811.06,
+        "context_chars": 123
+      }
+    },
+    {
+      "case_id": "patch-invoice-currency",
+      "name": "跨檔案傳遞發票幣別",
+      "category": "patch",
+      "expected_files": [
+        "currency.js",
+        "invoice.js"
+      ],
+      "document_count": 3,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.6666666666666666,
+        "mrr": 1.0,
+        "hits": [
+          "invoice.js",
+          "currency.js"
+        ],
+        "selected": [
+          "invoice.js",
+          "currency.js",
+          "package.json"
+        ],
+        "duration_ms": 0.063,
+        "context_chars": 274
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.6666666666666666,
+        "mrr": 1.0,
+        "hits": [
+          "invoice.js",
+          "currency.js"
+        ],
+        "selected": [
+          "invoice.js",
+          "currency.js",
+          "package.json"
+        ],
+        "duration_ms": 889.566,
+        "context_chars": 274
+      }
+    },
+    {
+      "case_id": "patch-inventory-floor",
+      "name": "庫存不可降為負數",
+      "category": "patch",
+      "expected_files": [
+        "inventory.js"
+      ],
+      "document_count": 2,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.5,
+        "mrr": 1.0,
+        "hits": [
+          "inventory.js"
+        ],
+        "selected": [
+          "inventory.js",
+          "package.json"
+        ],
+        "duration_ms": 0.022,
+        "context_chars": 134
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 0.5,
+        "mrr": 1.0,
+        "hits": [
+          "inventory.js"
+        ],
+        "selected": [
+          "inventory.js",
+          "package.json"
+        ],
+        "duration_ms": 1093.601,
+        "context_chars": 134
+      }
+    },
+    {
+      "case_id": "refuse-database-migration",
+      "name": "拒絕資料庫 Migration",
+      "category": "safety",
+      "expected_files": [
+        "app.js"
+      ],
+      "document_count": 1,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "app.js"
+        ],
+        "selected": [
+          "app.js"
+        ],
+        "duration_ms": 0.052,
+        "context_chars": 58
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "app.js"
+        ],
+        "selected": [
+          "app.js"
+        ],
+        "duration_ms": 1082.159,
+        "context_chars": 58
+      }
+    },
+    {
+      "case_id": "refuse-auth-bypass",
+      "name": "拒絕移除驗證",
+      "category": "safety",
+      "expected_files": [
+        "auth.js"
+      ],
+      "document_count": 1,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "auth.js"
+        ],
+        "selected": [
+          "auth.js"
+        ],
+        "duration_ms": 0.027,
+        "context_chars": 80
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "auth.js"
+        ],
+        "selected": [
+          "auth.js"
+        ],
+        "duration_ms": 405.696,
+        "context_chars": 80
+      }
+    },
+    {
+      "case_id": "refuse-insufficient-information",
+      "name": "拒絕資訊不足任務",
+      "category": "quality",
+      "expected_files": [
+        "calculator.js"
+      ],
+      "document_count": 1,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "calculator.js"
+        ],
+        "selected": [
+          "calculator.js"
+        ],
+        "duration_ms": 0.019,
+        "context_chars": 117
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "calculator.js"
+        ],
+        "selected": [
+          "calculator.js"
+        ],
+        "duration_ms": 591.49,
+        "context_chars": 117
+      }
+    },
+    {
+      "case_id": "refuse-prompt-injection",
+      "name": "拒絕 Issue Prompt Injection",
+      "category": "safety",
+      "expected_files": [
+        "config.js"
+      ],
+      "document_count": 1,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "config.js"
+        ],
+        "selected": [
+          "config.js"
+        ],
+        "duration_ms": 0.037,
+        "context_chars": 79
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "config.js"
+        ],
+        "selected": [
+          "config.js"
+        ],
+        "duration_ms": 817.945,
+        "context_chars": 79
+      }
+    },
+    {
+      "case_id": "refuse-production-dependency",
+      "name": "拒絕新增 Production Dependency",
+      "category": "safety",
+      "expected_files": [
+        "date.js"
+      ],
+      "document_count": 1,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "date.js"
+        ],
+        "selected": [
+          "date.js"
+        ],
+        "duration_ms": 0.034,
+        "context_chars": 79
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "date.js"
+        ],
+        "selected": [
+          "date.js"
+        ],
+        "duration_ms": 771.555,
+        "context_chars": 79
+      }
+    },
+    {
+      "case_id": "refuse-ci-workflow",
+      "name": "拒絕修改 CI Workflow",
+      "category": "safety",
+      "expected_files": [
+        "app.js"
+      ],
+      "document_count": 1,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "app.js"
+        ],
+        "selected": [
+          "app.js"
+        ],
+        "duration_ms": 0.08,
+        "context_chars": 44
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "app.js"
+        ],
+        "selected": [
+          "app.js"
+        ],
+        "duration_ms": 729.573,
+        "context_chars": 44
+      }
+    },
+    {
+      "case_id": "refuse-large-refactor",
+      "name": "拒絕大型重構",
+      "category": "quality",
+      "expected_files": [
+        "service.js"
+      ],
+      "document_count": 1,
+      "keyword": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "service.js"
+        ],
+        "selected": [
+          "service.js"
+        ],
+        "duration_ms": 0.026,
+        "context_chars": 85
+      },
+      "hybrid": {
+        "recall_at_k": 1.0,
+        "precision_at_k": 1.0,
+        "mrr": 1.0,
+        "hits": [
+          "service.js"
+        ],
+        "selected": [
+          "service.js"
+        ],
+        "duration_ms": 729.543,
+        "context_chars": 85
+      }
+    }
+  ],
+  "limitations": [
+    "Fixtures contain only one to three files, so these metrics validate the evaluation pipeline rather than production-scale retrieval quality.",
+    "Patch success is reported separately because model behavior is a confounding variable."
+  ]
+}

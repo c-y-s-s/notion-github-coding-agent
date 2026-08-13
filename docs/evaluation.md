@@ -30,6 +30,10 @@ Compare models or prompt versions only on the same dataset version. The current 
 
 The Dashboard can queue a full dataset or one selected case with Prompt v1 or v2. The local Worker claims the Supabase job and persists every grader check, automatic failure category, selected Context files, model latency, token usage, and estimated cost. Case detail pages expose this trace and can enqueue the same case again. The comparison table separates patch success from safe refusal and should only compare runs using the same dataset version.
 
+## Retrieval evaluation
+
+`python -m agent_worker.retrieval_eval` compares lexical and hybrid embedding retrieval on the same versioned fixtures. It reports Recall@K, Precision@K, MRR, selected Context size, and latency against explicit `retrieval_files` ground truth. Patch success remains separate because model behavior would confound the retrieval result. The current fixtures contain only one to three files; tied 100% recall validates the measurement pipeline but is not evidence that embeddings outperform keyword retrieval.
+
 ## Local models
 
 Benchmark model names prefixed with `ollama:` use Ollama structured outputs through the local `/api/chat` endpoint. Local inference is Evaluation-only and cannot create a production Task patch. On the 16 GB M2 demo machine, the tested set is `qwen2.5-coder:0.5b`, `qwen2.5-coder:1.5b`, and `qwen2.5-coder:3b`, always with a 2,048-token context, one loaded model, and one parallel request. Do not run 7B or 8B models on this machine. Local runs record token counts and latency but do not invent a USD API cost.

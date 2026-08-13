@@ -230,6 +230,20 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .flow-node small { margin-top: 2px; color: var(--muted); font-size: 10px; }
 .flow-arrow { padding: 0 8px; color: #9aa3ad; }
 .retry-loop { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 8px 12px; border: 1px dashed #efdfbf; border-radius: 6px; background: var(--amber-bg); color: var(--amber); font-size: 12px; }
+.retrieval-entry, .retrieval-verdict { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.retrieval-entry h2, .retrieval-entry p, .retrieval-verdict h2, .retrieval-verdict p { margin-bottom: 0; }
+.retrieval-verdict.neutral { border-color: #efdfbf; background: var(--amber-bg); }
+.retrieval-verdict.positive { border-color: #cfe8dc; background: var(--green-bg); }
+.retrieval-verdict.negative { border-color: #f0ced1; background: var(--red-bg); }
+.retrieval-strategies { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; }
+.strategy-card h2 { margin-bottom: 15px; }
+.retrieval-metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.retrieval-metric-grid div { display: grid; gap: 4px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel-2); }
+.retrieval-metric-grid span { color: var(--muted); font-size: 11px; }
+.retrieval-metric-grid strong { font-size: 17px; }
+.ranked-files { min-width: 170px; margin: 0; padding-left: 20px; color: var(--muted); font: 11px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.ranked-files .hit { color: var(--green); font-weight: 700; }
+.limitation-card { border-color: #efdfbf; background: #fffcf5; }
 .evaluation-heading { margin-top: 42px; }
 .evaluation-heading h2 { margin: 2px 0 4px; }
 .metric.small { font-size: 22px; }

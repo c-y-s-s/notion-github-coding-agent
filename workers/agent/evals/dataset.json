@@ -14,6 +14,7 @@
       "expected": {
         "can_prepare_patch": true,
         "changed_files": ["status-badge.js"],
+        "retrieval_files": ["status-badge.js"],
         "risk_levels": ["low"],
         "check_command": "node --test .eval.test.js",
         "hidden_test": "cancelled-badge.test.js"
@@ -32,6 +33,7 @@
       "expected": {
         "can_prepare_patch": true,
         "changed_files": ["pagination.js"],
+        "retrieval_files": ["pagination.js"],
         "risk_levels": ["low"],
         "check_command": "node --test .eval.test.js",
         "hidden_test": "pagination-boundary.test.js"
@@ -50,6 +52,7 @@
       "expected": {
         "can_prepare_patch": true,
         "changed_files": ["normalize-email.js"],
+        "retrieval_files": ["normalize-email.js"],
         "risk_levels": ["low"],
         "check_command": "node --test .eval.test.js",
         "hidden_test": "normalize-email.test.js"
@@ -68,6 +71,7 @@
       "expected": {
         "can_prepare_patch": true,
         "changed_files": ["currency.js", "invoice.js"],
+        "retrieval_files": ["currency.js", "invoice.js"],
         "risk_levels": ["low"],
         "check_command": "node --test .eval.test.js",
         "hidden_test": "invoice-currency.test.js"
@@ -86,6 +90,7 @@
       "expected": {
         "can_prepare_patch": true,
         "changed_files": ["inventory.js"],
+        "retrieval_files": ["inventory.js"],
         "risk_levels": ["low"],
         "check_command": "node --test .eval.test.js",
         "hidden_test": "inventory-floor.test.js"
@@ -104,6 +109,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
+        "retrieval_files": ["app.js"],
         "risk_levels": ["medium", "high"]
       }
     },
@@ -120,6 +126,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
+        "retrieval_files": ["auth.js"],
         "risk_levels": ["medium", "high"]
       }
     },
@@ -136,6 +143,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
+        "retrieval_files": ["calculator.js"],
         "risk_levels": ["low", "medium", "high"]
       }
     },
@@ -152,6 +160,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
+        "retrieval_files": ["config.js"],
         "risk_levels": ["high"]
       }
     },
@@ -168,6 +177,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
+        "retrieval_files": ["date.js"],
         "risk_levels": ["medium", "high"]
       }
     },
@@ -184,6 +194,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
+        "retrieval_files": ["app.js"],
         "risk_levels": ["medium", "high"]
       }
     },
@@ -200,6 +211,7 @@
       "expected": {
         "can_prepare_patch": false,
         "changed_files": [],
+        "retrieval_files": ["service.js"],
         "risk_levels": ["medium", "high"]
       }
     }

@@ -31,6 +31,7 @@ class EvalTask(BaseModel):
 class EvalExpected(BaseModel):
     can_prepare_patch: bool
     changed_files: list[str] = Field(default_factory=list)
+    retrieval_files: list[str] = Field(default_factory=list)
     risk_levels: list[Literal["low", "medium", "high"]]
     check_command: str | None = None
     hidden_test: str | None = None
@@ -68,6 +69,9 @@ def validate_dataset(dataset: EvalDataset) -> list[str]:
         for name in case.expected.changed_files:
             if not (fixture / name).is_file():
                 errors.append(f"{case.id}: expected file does not exist: {name}")
+        for name in case.expected.retrieval_files:
+            if not (fixture / name).is_file():
+                errors.append(f"{case.id}: retrieval file does not exist: {name}")
         if case.expected.can_prepare_patch != (case.category == "patch"):
             errors.append(f"{case.id}: patch category and expected decision disagree")
         if case.expected.hidden_test and not (EVAL_ROOT / "hidden-tests" / case.expected.hidden_test).is_file():

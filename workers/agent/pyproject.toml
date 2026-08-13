@@ -7,6 +7,7 @@ dependencies = ["openai>=1.100.0", "pydantic>=2.11.0", "supabase>=2.18.0", "pyth
 dev = ["pytest>=8.4.0", "ruff>=0.12.0"]
 [project.scripts]
 agent-eval = "agent_worker.eval_runner:main"
+retrieval-eval = "agent_worker.retrieval_eval:main"
 [tool.pytest.ini_options]
 pythonpath = ["."]
 [tool.setuptools.packages.find]
