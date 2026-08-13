@@ -60,6 +60,7 @@ def repository_context(
     task: dict | None = None,
     limit: int = 80_000,
     preferred_paths: list[str] | None = None,
+    allowed_paths: set[str] | None = None,
 ) -> str:
     allowed = {".ts", ".tsx", ".js", ".jsx", ".json"}
     chunks: list[str] = []
@@ -72,6 +73,8 @@ def repository_context(
     for name in tracked.stdout.splitlines():
         path = root / name
         if (
+            (allowed_paths is not None and name not in allowed_paths)
+            or
             path.suffix not in allowed
             or any(x in path.parts for x in ("node_modules", ".next"))
             or path.name.endswith("lock.json")
@@ -316,9 +319,20 @@ def process_queued(client, run_row: dict):
     final_actual: list[str] = []
     completed_attempts = 0
     model_calls: list[dict] = []
+    from .retrieval import retrieve_context
+
+    context, retrieval = retrieve_context(client, repo["id"], sha, worktree, task)
+    log_step(
+        client,
+        run_row["id"],
+        sequence,
+        "inspect",
+        "completed",
+        output_excerpt=f"{retrieval['method']}: {', '.join(retrieval['selected_files']) or 'keyword context'}",
+    )
+    sequence += 1
     for attempt in range(1, MAX_ATTEMPTS + 1):
         client.table("agent_runs").update({"attempt_number": attempt}).eq("id", run_row["id"]).execute()
-        context = repository_context(worktree, task)
         proposal = adapter.prepare_patch(
             task,
             context,
@@ -347,6 +361,7 @@ def process_queued(client, run_row: dict):
             )
             sequence += 1
             context = repository_context(worktree, task, preferred_paths=missing_related)
+            retrieval = {**retrieval, "method": f"{retrieval['method']}+requested_files", "selected_files": context_files(context)}
             proposal = adapter.prepare_patch(
                 task,
                 context,
@@ -370,6 +385,7 @@ def process_queued(client, run_row: dict):
                     "context_files": context_files(context),
                     "context_chars": len(context),
                     "model_call": adapter.last_call,
+                    "retrieval": retrieval,
                 },
             }
         ).execute()
@@ -395,6 +411,16 @@ def process_queued(client, run_row: dict):
                 "Agent 沒有提供可由 Repository Context 驗證的程式碼證據。",
                 "medium",
             )
+        log_step(
+            client,
+            run_row["id"],
+            sequence,
+            "review",
+            "completed",
+            attempt_number=attempt,
+            output_excerpt=f"已驗證 {sum(item.verified for item in proposal.analysis.evidence)} 筆程式碼證據",
+        )
+        sequence += 1
         actual, violations = apply_proposal(worktree, proposal)
         log_step(
             client,

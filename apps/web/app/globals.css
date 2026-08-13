@@ -217,6 +217,19 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .comparison-summary { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
 .comparison-summary .card { display: grid; gap: 5px; }
 .comparison-summary small { color: var(--muted); }
+.agent-flow-wrap { margin-bottom: 18px; }
+.agent-flow { display: flex; align-items: stretch; overflow-x: auto; padding: 4px 0 10px; }
+.flow-segment { display: flex; align-items: center; flex: 1; min-width: max-content; }
+.flow-node { display: flex; align-items: center; gap: 9px; min-width: 150px; padding: 11px; border: 1px solid var(--border); border-radius: 7px; background: var(--panel-2); }
+.flow-node.completed { border-color: #cfe8dc; background: var(--green-bg); }
+.flow-node.active { border-color: #efdfbf; background: var(--amber-bg); }
+.flow-node.failed { border-color: #f0ced1; background: var(--red-bg); }
+.flow-index { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 50%; background: white; color: var(--muted); font-size: 11px; font-weight: 700; }
+.flow-node strong, .flow-node small { display: block; }
+.flow-node strong { font-size: 12px; }
+.flow-node small { margin-top: 2px; color: var(--muted); font-size: 10px; }
+.flow-arrow { padding: 0 8px; color: #9aa3ad; }
+.retry-loop { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; padding: 8px 12px; border: 1px dashed #efdfbf; border-radius: 6px; background: var(--amber-bg); color: var(--amber); font-size: 12px; }
 .evaluation-heading { margin-top: 42px; }
 .evaluation-heading h2 { margin: 2px 0 4px; }
 .metric.small { font-size: 22px; }
