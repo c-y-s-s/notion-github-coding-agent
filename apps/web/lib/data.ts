@@ -44,6 +44,17 @@ export async function getBenchmarkCaseResults(caseId: string) {
   if (error) throw serviceError("讀取 Benchmark 案例結果失敗", error);
   return data ?? [];
 }
+export async function getBenchmarkRunWithResults(id: string) {
+  noStore();
+  if (!hasSupabaseEnv()) return null;
+  const db = adminDb();
+  const [{ data: run, error }, { data: results, error: resultsError }] = await Promise.all([
+    db.from("benchmark_runs").select("*").eq("id", id).maybeSingle(),
+    db.from("benchmark_case_results").select("*").eq("benchmark_run_id", id).order("case_id"),
+  ]);
+  if (error || resultsError) throw serviceError("讀取 Benchmark 比較資料失敗", error ?? resultsError);
+  return run ? { run, results: results ?? [] } : null;
+}
 export async function listSyncJobs(): Promise<SyncJob[]> {
   noStore();
   if (!hasSupabaseEnv()) return [];

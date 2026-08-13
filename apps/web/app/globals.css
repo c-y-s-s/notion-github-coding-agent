@@ -206,6 +206,17 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .benchmark-run-form input, .benchmark-run-form select { min-width: 150px; padding: 8px 9px; border: 1px solid var(--border); border-radius: 6px; background: white; color: var(--text); }
 .benchmark-table td:first-child { min-width: 240px; }
 .benchmark-table td small { display: block; margin-top: 3px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.benchmark-compare-form { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; padding: 14px; border: 1px solid var(--border); border-radius: 7px; background: var(--panel-2); }
+.benchmark-compare-form label { display: grid; flex: 1; gap: 5px; min-width: 220px; color: var(--muted); font-size: 11px; font-weight: 650; }
+.benchmark-compare-form select { width: 100%; padding: 8px 9px; border: 1px solid var(--border); border-radius: 6px; background: white; color: var(--text); }
+.compare-arrow, .comparison-direction { color: var(--muted); font-size: 20px; }
+.release-gate { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.release-gate.pass { border-color: #cfe8dc; background: var(--green-bg); }
+.release-gate.fail { border-color: #f0ced1; background: var(--red-bg); }
+.release-gate h2, .release-gate p { margin-bottom: 0; }
+.comparison-summary { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+.comparison-summary .card { display: grid; gap: 5px; }
+.comparison-summary small { color: var(--muted); }
 .evaluation-heading { margin-top: 42px; }
 .evaluation-heading h2 { margin: 2px 0 4px; }
 .metric.small { font-size: 22px; }
