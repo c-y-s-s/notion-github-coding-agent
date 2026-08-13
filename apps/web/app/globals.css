@@ -249,6 +249,48 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 650; letter-spacing: -.01em
 .replay-form select { min-width: 180px; padding: 8px 9px; border: 1px solid var(--border); border-radius: 6px; background: white; }
 .replay-message { width: 100%; color: var(--red); }
 .replay-table { margin-top: 18px; }
+.demo-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.demo-header-actions, .demo-final-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.demo-nav { position: sticky; top: 0; z-index: 5; display: flex; gap: 6px; overflow-x: auto; margin: 24px 0; padding: 9px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,.94); backdrop-filter: blur(8px); }
+.demo-nav a { flex: none; padding: 7px 10px; border-radius: 5px; color: var(--muted); font-size: 12px; font-weight: 650; }
+.demo-nav a:hover { background: var(--panel-2); color: var(--text); }
+.demo-section { scroll-margin-top: 70px; padding: 0; overflow: hidden; }
+.demo-section-heading { display: flex; gap: 15px; padding: 20px; border-bottom: 1px solid var(--border); background: var(--panel-2); }
+.demo-section-heading > span { color: #a4adb6; font: 700 22px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.demo-section-heading h2, .demo-section-heading p { margin-bottom: 0; }
+.demo-section-heading p { max-width: 850px; margin-top: 5px; color: var(--muted); line-height: 1.6; }
+.demo-section-content { padding: 20px; }
+.demo-task, .run-card-title, .demo-verdict { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.demo-task h3 { margin: 2px 0 8px; }
+.demo-task p { max-width: 760px; margin: 0; color: var(--muted); }
+.demo-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.demo-metrics .card { padding: 13px; box-shadow: none; }
+.demo-metrics strong { display: block; margin-top: 6px; font-size: 18px; overflow-wrap: anywhere; }
+.demo-files { margin-top: 10px; }
+.demo-compare { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; margin-bottom: 18px; }
+.run-card { box-shadow: none; }
+.run-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 16px 0 0; }
+.run-card dl div { padding: 9px; border-radius: 5px; background: var(--panel-2); }
+.run-card dt { color: var(--muted); font-size: 10px; }
+.run-card dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 12px; font-weight: 650; }
+.demo-details { margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; }
+.demo-details summary { cursor: pointer; font-weight: 650; }
+.demo-details .analysis-panel { margin-top: 15px; }
+.demo-verdict { margin-bottom: 16px; padding: 14px; border: 1px solid #efdfbf; border-radius: 7px; background: var(--amber-bg); }
+.demo-verdict span { color: var(--muted); }
+.strategy-demo { display: grid; gap: 9px; box-shadow: none; }
+.strategy-demo h3 { margin-bottom: 2px; }
+.strategy-demo div { display: flex; justify-content: space-between; padding: 8px; border-radius: 5px; background: var(--panel-2); }
+.strategy-demo span { color: var(--muted); font-size: 12px; }
+.demo-final-links { margin-top: 15px; }
+.demo-empty .button { margin-top: 10px; }
+
+@media (max-width: 760px) {
+  .demo-header, .demo-task, .demo-verdict { align-items: flex-start; flex-direction: column; }
+  .demo-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .demo-compare, .retrieval-strategies, .comparison-summary { grid-template-columns: 1fr; }
+  .demo-compare .comparison-direction { transform: rotate(90deg); text-align: center; }
+}
 .evaluation-heading { margin-top: 42px; }
 .evaluation-heading h2 { margin: 2px 0 4px; }
 .metric.small { font-size: 22px; }

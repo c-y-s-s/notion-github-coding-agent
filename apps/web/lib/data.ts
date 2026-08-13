@@ -55,6 +55,23 @@ export async function getBenchmarkRunWithResults(id: string) {
   if (error || resultsError) throw serviceError("讀取 Benchmark 比較資料失敗", error ?? resultsError);
   return run ? { run, results: results ?? [] } : null;
 }
+export async function getDemoStory() {
+  noStore();
+  if (!hasSupabaseEnv()) return null;
+  const db = adminDb();
+  const { data: replay, error } = await db.from("agent_runs").select("*").not("parent_run_id", "is", null).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (error) throw serviceError("讀取 Demo Replay 失敗", error);
+  if (!replay?.parent_run_id) return null;
+  const [{ data: original }, { data: task }, { data: runs }, { data: artifacts }, { data: steps }] = await Promise.all([
+    db.from("agent_runs").select("*").eq("id", replay.parent_run_id).single(),
+    db.from("work_items").select("*").eq("id", replay.work_item_id).single(),
+    db.from("agent_runs").select("*").or(`id.eq.${replay.parent_run_id},parent_run_id.eq.${replay.parent_run_id}`).order("created_at"),
+    db.from("artifacts").select("*").in("agent_run_id", [replay.parent_run_id, replay.id]).order("created_at"),
+    db.from("agent_run_steps").select("*").in("agent_run_id", [replay.parent_run_id, replay.id]).order("sequence"),
+  ]);
+  if (!original || !task) return null;
+  return { original, replay, task, runs: runs ?? [], artifacts: artifacts ?? [], steps: steps ?? [] };
+}
 export async function listSyncJobs(): Promise<SyncJob[]> {
   noStore();
   if (!hasSupabaseEnv()) return [];
