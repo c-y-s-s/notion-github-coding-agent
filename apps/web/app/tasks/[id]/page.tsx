@@ -6,6 +6,8 @@ import { getTaskDetail } from "@/lib/data";
 import { hasSupabaseEnv } from "@/lib/supabase";
 import { AnalysisPanel } from "@/components/analysis-panel";
 import { DiffViewer } from "@/components/diff-viewer";
+import { PageHeader } from "@/components/ui";
+import { TaskLifecycle } from "@/components/task-lifecycle";
 
 export default async function TaskDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,11 +21,11 @@ export default async function TaskDetail({ params }: { params: Promise<{ id: str
   const activeRun = latestRun && ["queued", "running", "awaiting_approval", "approved", "pushing"].includes(latestRun.status);
   const noChanges = latestRun?.error_code === "NO_CHANGES";
   const notionDeleted = Boolean(task.notion_page_id && !task.notion_page_url);
+  const latestPr = pullRequests[0];
 
   return <>
-    <div className="eyebrow">任務詳情</div>
-    <h1>{task.title}</h1>
-    <div className="actions detail-status"><StatusBadge value={task.source} /><StatusBadge value={task.planning_status} /><StatusBadge value={task.agent_status} />{notionDeleted && <StatusBadge value="notion_deleted" />}</div>
+    <PageHeader eyebrow="任務詳情" title={task.title} description="需求以來源平台為準；工程狀態、Agent 與 PR 在此整合。" actions={<div className="actions"><StatusBadge value={task.source} /><StatusBadge value={task.planning_status} /><StatusBadge value={task.agent_status} />{notionDeleted ? <StatusBadge value="notion_deleted" /> : null}</div>} />
+    <TaskLifecycle issue={Boolean(task.github_issue_number)} agentStatus={task.agent_status} branch={Boolean(latestRun?.branch_name)} prState={latestPr?.state} />
     {notionDeleted && <div className="notice">原始 Notion Task 已被刪除。系統保留 GitHub、PR 與 Agent 稽核紀錄，但不再回寫該 Notion Page。</div>}
     {!configured && <div className="notice">目前為示範模式。設定 Supabase 後即可建立 Issue 或執行程式碼分析。</div>}
 
@@ -33,11 +35,11 @@ export default async function TaskDetail({ params }: { params: Promise<{ id: str
         <p>{task.description || "尚未提供需求說明。"}</p>
         <h2>驗收條件</h2>
         <p className="muted">{task.acceptance_criteria || "尚未提供驗收條件。"}</p>
-        <div className="actions">
+        <div className="actions task-primary-actions">
           {task.notion_page_url && <a className="button secondary" href={task.notion_page_url} target="_blank" rel="noreferrer">開啟 Notion</a>}
           {task.github_issue_url && <a className="button secondary" href={task.github_issue_url} target="_blank" rel="noreferrer">開啟 GitHub Issue</a>}
-          {!notionDeleted && !task.github_issue_number && task.source === "notion" && <ActionButton endpoint={`/api/tasks/${task.id}/create-github-issue`} label="建立 GitHub Issue" tone="secondary" disabled={!configured} />}
-          {!notionDeleted && !activeRun && task.planning_status !== "done" && <ActionButton endpoint={`/api/tasks/${task.id}/prepare-patch`} label="分析並準備修正" disabled={!configured} />}
+          {!notionDeleted && !task.github_issue_number && task.source === "notion" ? <ActionButton endpoint={`/api/tasks/${task.id}/create-github-issue`} label="下一步：建立 GitHub Issue" disabled={!configured} /> : null}
+          {!notionDeleted && (task.github_issue_number || task.source === "github") && !activeRun && task.planning_status !== "done" ? <ActionButton endpoint={`/api/tasks/${task.id}/prepare-patch`} label="下一步：分析並準備修正" disabled={!configured} /> : null}
         </div>
       </section>
 

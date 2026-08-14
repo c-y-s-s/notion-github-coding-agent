@@ -20,7 +20,7 @@ export async function listSprints(): Promise<Sprint[]> {
 export async function listRuns(): Promise<AgentRun[]> {
   noStore();
   if (!hasSupabaseEnv()) return demoRuns;
-  const { data, error } = await adminDb().from("agent_runs").select("*").order("created_at", { ascending: false });
+  const { data, error } = await adminDb().from("agent_runs").select("*,work_items(title)").order("created_at", { ascending: false });
   if (error) throw serviceError("讀取 Agent 執行紀錄失敗", error); return data as AgentRun[];
 }
 export async function listEvaluations() {

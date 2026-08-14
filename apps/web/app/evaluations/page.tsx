@@ -5,6 +5,7 @@ import { getBenchmarkData } from "@/lib/benchmark-data";
 import { BenchmarkRunForm } from "@/components/benchmark-run-form";
 import { estimatedCost, formatCost } from "@/lib/model-costs";
 import { BenchmarkCompareForm } from "@/components/benchmark-compare-form";
+import { PageHeader } from "@/components/ui";
 
 const categoryLabels: Record<string, string> = { wrong_analysis: "分析方向錯誤", missing_context: "缺少程式碼背景", bad_patch: "Patch 不符合需求", checks_failed: "檢查無法通過", unsafe_scope: "修改範圍不安全", other: "其他" };
 
@@ -17,7 +18,7 @@ export default async function EvaluationsPage() {
   const usable = patchRated.filter(item => item.patch_usable).length;
   const failures = Object.entries(evaluations.reduce<Record<string, number>>((counts, item) => { if (item.failure_category) counts[item.failure_category] = (counts[item.failure_category] ?? 0) + 1; return counts; }, {})).sort((a, b) => b[1] - a[1]);
   return <>
-    <div className="eyebrow">Agent 品質</div><h1>Evaluation</h1><p className="lead">固定測試集驗證 Agent 的修正與安全拒絕能力；人工標註補充真實任務的品質判斷。</p>
+    <PageHeader eyebrow="AI Agent 品質" title="Evaluation（模型評估）" description="固定測試集驗證修正與安全拒絕能力；人工標註補充真實任務的品質判斷。" />
     <section className="section card retrieval-entry"><div><span className="field-label">Context Retrieval</span><h2>Keyword vs Hybrid Semantic</h2><p className="muted">比較 Recall@K、Precision@K、MRR、Context 大小與延遲，不把模型 Patch 能力混入檢索分數。</p></div><Link className="button" href="/evaluations/retrieval">查看 Retrieval Evaluation</Link></section>
 
     <section className="section benchmark-hero">

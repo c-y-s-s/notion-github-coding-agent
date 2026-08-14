@@ -22,7 +22,7 @@ export type Sprint = {
   notion_page_url: string | null;
 };
 
-export type AgentRun = { id: string; work_item_id: string; status: string; risk_level: string | null; branch_name: string | null; started_at: string | null; finished_at: string | null };
+export type AgentRun = { id: string; work_item_id: string; status: string; risk_level: string | null; branch_name: string | null; started_at: string | null; finished_at: string | null; error_code?: string | null; error_message?: string | null; work_items?: { title: string } | null };
 
 export type SyncJob = {
   id: string;
