@@ -6,9 +6,9 @@ const task = (overrides: Partial<WorkItem>): WorkItem => ({ id: "task-1", source
 const run = (overrides: Partial<AgentRun>): AgentRun => ({ id: "run-1", work_item_id: "task-1", status: "failed", risk_level: "low", branch_name: null, started_at: null, finished_at: null, ...overrides });
 
 describe("buildTodayActions", () => {
-  it("prioritizes overdue work before approval and review", () => {
+  it("prioritizes overdue work and removes a lower-priority action for the same task", () => {
     const result = buildTodayActions({ tasks: [task({ deadline: "2026-08-12" }), task({ id: "issue-1", title: "外部問題", review_status: "pending" })], runs: [run({ status: "awaiting_approval" })], failedJobs: [], failedEvents: [], today: "2026-08-14" });
-    expect(result.map(item => item.kicker)).toEqual(["已逾期 2 天", "AI Patch 等待核准", "GitHub Issue 待審核"]);
+    expect(result.map(item => item.kicker)).toEqual(["已逾期 2 天", "GitHub Issue 待審核"]);
   });
 
   it("uses only the latest run for each task", () => {
@@ -19,5 +19,18 @@ describe("buildTodayActions", () => {
   it("does not surface ignored or completed work", () => {
     const result = buildTodayActions({ tasks: [task({ review_status: "ignored", deadline: "2026-08-10" }), task({ id: "done", planning_status: "done", deadline: "2026-08-14" })], runs: [], failedJobs: [], failedEvents: [], today: "2026-08-14" });
     expect(result).toHaveLength(0);
+  });
+
+  it("shows only the highest-priority action for the same task", () => {
+    const result = buildTodayActions({
+      tasks: [task({ deadline: "2026-08-12" })],
+      runs: [run({ status: "awaiting_approval" })],
+      failedJobs: [],
+      failedEvents: [],
+      today: "2026-08-14",
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].kicker).toBe("已逾期 2 天");
   });
 });

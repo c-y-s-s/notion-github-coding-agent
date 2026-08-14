@@ -1,4 +1,5 @@
 import subprocess
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -9,6 +10,7 @@ from agent_worker.worker import (
     build_context_manifest,
     error_signature,
     is_no_change_outcome,
+    is_stale_run,
     repository_context,
     verify_evidence,
 )
@@ -119,3 +121,23 @@ def test_context_manifest_detects_source_changes(tmp_path: Path):
     after = build_context_manifest(tmp_path, ["src.js"])
     assert before[0]["path"] == after[0]["path"]
     assert before[0]["sha256"] != after[0]["sha256"]
+
+
+def test_run_without_lease_is_stale():
+    assert is_stale_run({"lease_expires_at": None})
+
+
+def test_run_with_future_lease_is_not_stale():
+    current = datetime(2026, 8, 14, 8, 0, tzinfo=UTC)
+    assert not is_stale_run(
+        {"lease_expires_at": "2026-08-14T08:01:00+00:00"},
+        current,
+    )
+
+
+def test_run_with_expired_lease_is_stale():
+    current = datetime(2026, 8, 14, 8, 2, tzinfo=UTC)
+    assert is_stale_run(
+        {"lease_expires_at": "2026-08-14T08:01:00Z"},
+        current,
+    )

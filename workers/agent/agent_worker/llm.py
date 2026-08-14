@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import urllib.error
 import urllib.request
@@ -21,7 +22,8 @@ class ModelAdapter:
             raise ValueError(f"Unsupported prompt version: {prompt_version}")
         self.model, self.prompt_version = model, prompt_version
         self.provider = "ollama" if model.startswith("ollama:") else "openai"
-        self.client = None if self.provider == "ollama" else OpenAI()
+        timeout = float(os.getenv("OPENAI_REQUEST_TIMEOUT_SECONDS", "300"))
+        self.client = None if self.provider == "ollama" else OpenAI(timeout=timeout)
         self.last_call: dict = {}
 
     def prepare_patch(

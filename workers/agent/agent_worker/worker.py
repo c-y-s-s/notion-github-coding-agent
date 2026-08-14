@@ -4,10 +4,11 @@ import os
 import re
 import socket
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
+from openai import OpenAIError
 from supabase import create_client
 
 from .costs import estimate_cost_usd
@@ -31,6 +32,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / "apps/web/.env.local")
 load_dotenv(PROJECT_ROOT / ".env", override=False)
 now = lambda: datetime.now(UTC).isoformat()
+RUN_LEASE_SECONDS = int(os.getenv("AGENT_RUN_LEASE_SECONDS", "720"))
+WORKER_ERRORS = (OSError, RuntimeError, ValueError, TimeoutError, OpenAIError)
 
 
 def branch_slug(title: str) -> str:
@@ -54,6 +57,58 @@ def log_step(client, run_id: str, sequence: int, kind: str, status: str, attempt
             **fields,
         }
     ).execute()
+
+
+def begin_step(client, run_id: str, sequence: int, kind: str, attempt_number: int = 0, **fields):
+    client.table("agent_run_steps").insert(
+        {
+            "agent_run_id": run_id,
+            "sequence": sequence,
+            "step_type": kind,
+            "status": "running",
+            "attempt_number": attempt_number,
+            "started_at": now(),
+            **fields,
+        }
+    ).execute()
+
+
+def finish_step(client, run_id: str, sequence: int, status: str, **fields):
+    client.table("agent_run_steps").update(
+        {"status": status, "finished_at": now(), **fields}
+    ).eq("agent_run_id", run_id).eq("sequence", sequence).execute()
+
+
+def lease_deadline(seconds: int = RUN_LEASE_SECONDS) -> str:
+    return (datetime.now(UTC) + timedelta(seconds=seconds)).isoformat()
+
+
+def renew_run_lease(client, run_id: str, worker_id: str, seconds: int = RUN_LEASE_SECONDS):
+    client.table("agent_runs").update(
+        {"claimed_by": worker_id, "lease_expires_at": lease_deadline(seconds)}
+    ).eq("id", run_id).eq("status", "running").execute()
+
+
+def is_stale_run(run_row: dict, current_time: datetime | None = None) -> bool:
+    expires_at = run_row.get("lease_expires_at")
+    if not expires_at:
+        return True
+    expires = datetime.fromisoformat(expires_at)
+    return expires <= (current_time or datetime.now(UTC))
+
+
+def recover_stale_runs(client):
+    rows = client.table("agent_runs").select(
+        "id,work_item_id,lease_expires_at"
+    ).eq("status", "running").execute().data
+    for run_row in rows:
+        if is_stale_run(run_row):
+            fail(
+                client,
+                run_row,
+                "WORKER_INTERRUPTED",
+                "執行中的 Worker 已中斷，Run lease 過期。請確認環境後重新執行。",
+            )
 
 
 def repository_context(
@@ -287,7 +342,7 @@ def cleanup_rejected_branches(client):
         delete_local_branch(Path(repo["local_path"]).resolve(), run_row["branch_name"])
 
 
-def process_queued(client, run_row: dict):
+def process_queued(client, run_row: dict, worker_id: str):
     task = run_row.get("task_snapshot") or client.table("work_items").select("*").eq("id", run_row["work_item_id"]).single().execute().data
     repo = client.table("repositories").select("*").eq("id", run_row["repository_id"]).single().execute().data
     root = Path(repo["local_path"]).resolve()
@@ -306,6 +361,8 @@ def process_queued(client, run_row: dict):
             "base_commit_sha": sha,
             "worktree_path": str(worktree),
             "started_at": now(),
+            "claimed_by": worker_id,
+            "lease_expires_at": lease_deadline(),
         }
     ).eq("id", run_row["id"]).execute()
     client.table("work_items").update({"agent_status": "preparing"}).eq("id", task["id"]).execute()
@@ -313,6 +370,7 @@ def process_queued(client, run_row: dict):
     sequence = 1
     install_command = repo.get("install_command")
     if install_command:
+        renew_run_lease(client, run_row["id"], worker_id, MAX_SECONDS + 60)
         result = shell(install_command, worktree, MAX_SECONDS)
         log_step(client, run_row["id"], sequence, "inspect", "completed" if result.returncode == 0 else "failed", command=install_command, exit_code=result.returncode, output_excerpt=(result.stdout + result.stderr)[-8000:])
         sequence += 1
@@ -322,6 +380,7 @@ def process_queued(client, run_row: dict):
     for command in checks:
         if not command:
             continue
+        renew_run_lease(client, run_row["id"], worker_id, MAX_SECONDS + 60)
         result = shell(command, worktree, MAX_SECONDS)
         log_step(
             client,
@@ -360,12 +419,20 @@ def process_queued(client, run_row: dict):
     sequence += 1
     for attempt in range(1, MAX_ATTEMPTS + 1):
         client.table("agent_runs").update({"attempt_number": attempt}).eq("id", run_row["id"]).execute()
-        proposal = adapter.prepare_patch(
-            task,
-            context,
-            attempt=attempt,
-            check_failure=check_failure,
-        )
+        renew_run_lease(client, run_row["id"], worker_id)
+        begin_step(client, run_row["id"], sequence, "plan", attempt_number=attempt)
+        try:
+            proposal = adapter.prepare_patch(
+                task,
+                context,
+                attempt=attempt,
+                check_failure=check_failure,
+            )
+        except WORKER_ERRORS as exc:
+            finish_step(client, run_row["id"], sequence, "failed", output_excerpt=str(exc)[-8000:])
+            raise
+        finish_step(client, run_row["id"], sequence, "completed")
+        sequence += 1
         model_calls.append(adapter.last_call)
         totals = token_totals(model_calls)
         client.table("agent_runs").update(
@@ -389,12 +456,20 @@ def process_queued(client, run_row: dict):
             sequence += 1
             context = repository_context(worktree, task, preferred_paths=missing_related)
             retrieval = {**retrieval, "method": f"{retrieval['method']}+requested_files", "selected_files": context_files(context)}
-            proposal = adapter.prepare_patch(
-                task,
-                context,
-                attempt=attempt,
-                check_failure={"stage": "context_retrieval", "missing_files": missing_related},
-            )
+            renew_run_lease(client, run_row["id"], worker_id)
+            begin_step(client, run_row["id"], sequence, "plan", attempt_number=attempt)
+            try:
+                proposal = adapter.prepare_patch(
+                    task,
+                    context,
+                    attempt=attempt,
+                    check_failure={"stage": "context_retrieval", "missing_files": missing_related},
+                )
+            except WORKER_ERRORS as exc:
+                finish_step(client, run_row["id"], sequence, "failed", output_excerpt=str(exc)[-8000:])
+                raise
+            finish_step(client, run_row["id"], sequence, "completed")
+            sequence += 1
             model_calls.append(adapter.last_call)
             totals = token_totals(model_calls)
             client.table("agent_runs").update(
@@ -419,8 +494,6 @@ def process_queued(client, run_row: dict):
                 },
             }
         ).execute()
-        log_step(client, run_row["id"], sequence, "plan", "completed", attempt_number=attempt)
-        sequence += 1
         if attempt == 1 and is_no_change_outcome(proposal.analysis, proposal.edits):
             return complete_without_changes(client, run_row, task, proposal.analysis.risk_level)
         if not proposal.analysis.can_prepare_patch or not proposal.edits:
@@ -482,6 +555,7 @@ def process_queued(client, run_row: dict):
         for command in checks:
             if not command:
                 continue
+            renew_run_lease(client, run_row["id"], worker_id, MAX_SECONDS + 60)
             result = shell(command, worktree, MAX_SECONDS)
             output = (result.stdout + result.stderr)[-8000:]
             log_step(
@@ -594,6 +668,7 @@ def main():
         client.table("worker_heartbeats").upsert(
             {"worker_id": worker_id, "last_seen_at": now(), "metadata": {"pid": os.getpid()}}
         ).execute()
+        recover_stale_runs(client)
         benchmark_rows = (
             client.table("benchmark_runs")
             .select("*")
@@ -609,7 +684,7 @@ def main():
             benchmark = benchmark_rows[0]
             try:
                 process_benchmark_run(client, benchmark)
-            except (OSError, RuntimeError, ValueError, TimeoutError) as exc:
+            except WORKER_ERRORS as exc:
                 client.table("benchmark_runs").update(
                     {"status": "failed", "error_message": str(exc), "finished_at": now()}
                 ).eq("id", benchmark["id"]).execute()
@@ -626,9 +701,9 @@ def main():
             item = rows[0]
             try:
                 process_approved(client, item) if item["status"] == "approved" else process_queued(
-                    client, item
+                    client, item, worker_id
                 )
-            except (OSError, RuntimeError, ValueError, TimeoutError) as exc:
+            except WORKER_ERRORS as exc:
                 fail(client, item, "WORKER_ERROR", str(exc))
         if args.once:
             return
