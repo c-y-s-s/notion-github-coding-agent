@@ -1,11 +1,6 @@
 import Link from "next/link";
 import {
-  getLatestWorkerHeartbeat,
-  listRuns,
-  listSprints,
-  listSyncEvents,
-  listSyncJobs,
-  listTasks,
+  getOverviewData,
 } from "@/lib/data";
 import { StatusBadge } from "@/components/status-badge";
 import { DeadlineWorkspace } from "@/components/deadline-workspace";
@@ -59,17 +54,8 @@ function latestRuns<T extends { work_item_id: string }>(runs: T[]) {
 }
 
 export default async function Overview() {
-  const [tasks, runs, sprints, syncJobs, syncEvents, heartbeat] =
-    await Promise.all([
-      listTasks(),
-      listRuns(),
-      listSprints(),
-      listSyncJobs(),
-      listSyncEvents(),
-      getLatestWorkerHeartbeat(),
-    ]);
+  const { tasks, runs, sprints, syncJobs, syncEvents, heartbeat } = await getOverviewData();
 
-  console.log("tasks", tasks);
   const failedJobs = syncJobs.filter((job) => job.status === "failed");
   const failedEvents = syncEvents.filter((event) => event.status === "failed");
   const formalTasks = tasks.filter(

@@ -29,6 +29,7 @@ erDiagram
 | `repositories` | GitHub 身分、default branch、本機路徑與允許的檢查指令 |
 | `work_items` | 跨 provider 的工作身分與各種獨立狀態 |
 | `sprints` | Notion Sprint 身分與日期區間 |
+| `sprint_rotation_locks` | 防止排程重複執行造成 Sprint 重複建立 |
 | `pull_requests` | PR number、node ID 與生命週期 |
 | `sync_events` | Provider delivery 去重與稽核 |
 | `sync_jobs` | 可重試的延後同步工作 |

@@ -21,5 +21,6 @@ describe("sprint display", () => {
 });
 
 function sprint(id: string, start_date: string, end_date: string, status: Sprint["status"]): Sprint {
-  return { id, project_id: "project", name: id, week_key: id, start_date, end_date, status, goal: null, notion_page_id: id, notion_page_url: null };
+  const sprint_window = id === "current" ? "current" : id === "next" ? "next" : "last";
+  return { id, project_id: "project", name: id, week_key: id, start_date, end_date, status, sprint_window, goal: null, notion_page_id: id, notion_page_url: null };
 }

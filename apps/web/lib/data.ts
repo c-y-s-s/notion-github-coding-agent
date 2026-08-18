@@ -1,5 +1,5 @@
-import { demoRuns, demoTasks } from "./demo-data";
-import { adminDb, hasSupabaseEnv } from "./supabase";
+import { demoRuns, demoTasks, getRecordingDemoStory } from "./demo-data";
+import { adminDb, hasSupabaseEnv, retrySupabaseRead } from "./supabase";
 import type {
   AgentRun,
   Sprint,
@@ -11,33 +11,70 @@ import type {
 import { unstable_noStore as noStore } from "next/cache";
 import { serviceError } from "./errors";
 
+type OverviewData = {
+  tasks: WorkItem[];
+  runs: AgentRun[];
+  sprints: Sprint[];
+  syncJobs: SyncJob[];
+  syncEvents: SyncEvent[];
+  heartbeat: WorkerHeartbeat | null;
+};
+
+let lastOverviewSnapshot: OverviewData | null = null;
+
+export async function getOverviewData(): Promise<OverviewData> {
+  noStore();
+  if (!hasSupabaseEnv()) return { tasks: demoTasks, runs: demoRuns, sprints: [], syncJobs: [], syncEvents: [], heartbeat: null };
+  const { data, error } = await retrySupabaseRead(() => adminDb().rpc("dashboard_overview"));
+  if (error) {
+    if (error.code === "PGRST303" && lastOverviewSnapshot) {
+      return lastOverviewSnapshot;
+    }
+    throw serviceError("讀取首頁資料失敗", error);
+  }
+  const value = data as {
+    tasks?: WorkItem[]; runs?: AgentRun[]; sprints?: Sprint[];
+    sync_jobs?: SyncJob[]; sync_events?: SyncEvent[]; heartbeat?: WorkerHeartbeat | null;
+  } | null;
+  const snapshot = {
+    tasks: value?.tasks ?? [],
+    runs: value?.runs ?? [],
+    sprints: value?.sprints ?? [],
+    syncJobs: value?.sync_jobs ?? [],
+    syncEvents: value?.sync_events ?? [],
+    heartbeat: value?.heartbeat ?? null,
+  };
+  lastOverviewSnapshot = snapshot;
+  return snapshot;
+}
+
 export async function listTasks(): Promise<WorkItem[]> {
   noStore();
   if (!hasSupabaseEnv()) return demoTasks;
-  const { data, error } = await adminDb()
+  const { data, error } = await retrySupabaseRead(() => adminDb()
     .from("work_items")
     .select("*")
-    .order("updated_at", { ascending: false });
+    .order("updated_at", { ascending: false }));
   if (error) throw serviceError("讀取任務失敗", error);
   return data as WorkItem[];
 }
 export async function listSprints(): Promise<Sprint[]> {
   noStore();
   if (!hasSupabaseEnv()) return [];
-  const { data, error } = await adminDb()
+  const { data, error } = await retrySupabaseRead(() => adminDb()
     .from("sprints")
     .select("*")
-    .order("start_date", { ascending: false });
+    .order("start_date", { ascending: false }));
   if (error) throw serviceError("讀取 Sprint 失敗", error);
   return data as Sprint[];
 }
 export async function listRuns(): Promise<AgentRun[]> {
   noStore();
   if (!hasSupabaseEnv()) return demoRuns;
-  const { data, error } = await adminDb()
+  const { data, error } = await retrySupabaseRead(() => adminDb()
     .from("agent_runs")
     .select("*,work_items(title)")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }));
   if (error) throw serviceError("讀取 Agent 執行紀錄失敗", error);
   return data as AgentRun[];
 }
@@ -95,6 +132,7 @@ export async function getBenchmarkRunWithResults(id: string) {
 }
 export async function getDemoStory() {
   noStore();
+  if (process.env.DEMO_RECORDING_MODE === "true") return getRecordingDemoStory();
   if (!hasSupabaseEnv()) return null;
   const db = adminDb();
   const { data: replay, error } = await db
@@ -146,36 +184,41 @@ export async function getDemoStory() {
 export async function listSyncJobs(): Promise<SyncJob[]> {
   noStore();
   if (!hasSupabaseEnv()) return [];
-  const { data, error } = await adminDb()
+  const { data, error } = await retrySupabaseRead(() => adminDb()
     .from("sync_jobs")
     .select("*,work_items(title)")
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(100));
+  if (error?.code === "PGRST303") return [];
   if (error) throw serviceError("讀取同步工作失敗", error);
   return data as unknown as SyncJob[];
 }
 export async function getLatestWorkerHeartbeat(): Promise<WorkerHeartbeat | null> {
   noStore();
   if (!hasSupabaseEnv()) return null;
-  const { data, error } = await adminDb()
+  const { data, error } = await retrySupabaseRead(() => adminDb()
     .from("worker_heartbeats")
     .select("*")
     .order("last_seen_at", { ascending: false })
     .limit(1)
-    .maybeSingle();
+    .maybeSingle());
+  // Worker heartbeat is optional observability data. A transient Supabase
+  // gateway JWT skew must not make the entire overview unavailable.
+  if (error?.code === "PGRST303") return null;
   if (error) throw serviceError("讀取 Worker 狀態失敗", error);
   return data as WorkerHeartbeat | null;
 }
 export async function listSyncEvents(): Promise<SyncEvent[]> {
   noStore();
   if (!hasSupabaseEnv()) return [];
-  const { data, error } = await adminDb()
+  const { data, error } = await retrySupabaseRead(() => adminDb()
     .from("sync_events")
     .select(
       "id,provider,provider_event_id,event_type,status,attempt_count,last_error,received_at,processed_at",
     )
     .order("received_at", { ascending: false })
-    .limit(100);
+    .limit(100));
+  if (error?.code === "PGRST303") return [];
   if (error) throw serviceError("讀取 Webhook 事件失敗", error);
   return data as SyncEvent[];
 }

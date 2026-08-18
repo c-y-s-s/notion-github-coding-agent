@@ -2,10 +2,14 @@ import type { Sprint } from "./types";
 
 export function sprintSlots(sprints: Sprint[]) {
   const ordered = [...sprints].sort((left, right) => left.start_date.localeCompare(right.start_date));
-  const current = ordered.find(sprint => sprint.status === "active") ?? null;
+  const current = ordered.find(sprint => sprint.sprint_window === "current") ?? ordered.find(sprint => sprint.status === "active") ?? null;
   if (!current) return { current: null, next: null, last: null };
   const index = ordered.findIndex(sprint => sprint.id === current.id);
-  return { current, last: ordered[index - 1] ?? null, next: ordered[index + 1] ?? null };
+  return {
+    current,
+    last: ordered.find(sprint => sprint.sprint_window === "last") ?? ordered[index - 1] ?? null,
+    next: ordered.find(sprint => sprint.sprint_window === "next") ?? ordered[index + 1] ?? null,
+  };
 }
 
 export function orderedSprints(sprints: Sprint[]) {

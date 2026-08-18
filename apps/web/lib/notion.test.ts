@@ -26,7 +26,8 @@ describe("notionPageFields", () => {
       "End Date": { date: { start: "2026-08-16" } },
       Status: { select: { name: "Active" } },
       Goal: { rich_text: [{ plain_text: "Ship sprint board" }] },
-    } })).toEqual({ name: "Sprint 2026-W33", week_key: "2026-W33", start_date: "2026-08-10", end_date: "2026-08-16", status: "active", goal: "Ship sprint board" });
+      Window: { select: { name: "Current" } },
+    } })).toEqual({ name: "Sprint 2026-W33", week_key: "2026-W33", start_date: "2026-08-10", end_date: "2026-08-16", status: "active", sprint_window: "current", goal: "Ship sprint board" });
   });
 });
 

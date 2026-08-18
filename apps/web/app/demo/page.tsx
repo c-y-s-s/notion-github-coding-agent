@@ -18,8 +18,10 @@ export default async function DemoPage() {
   const originalSteps = story.steps.filter((step: Step) => step.agent_run_id === story.original.id);
   const replaySteps = story.steps.filter((step: Step) => step.agent_run_id === story.replay.id);
   const retrievalMeta = originalAnalysis?.metadata?.retrieval;
+  const recordingMode = "recordingMode" in story && story.recordingMode === true;
   return <>
-    <div className="demo-header"><div><div className="eyebrow">五分鐘面試展示</div><h1>AI Coding Agent：從任務到可驗證決策</h1><p className="lead">所有內容來自真實 Task、Agent Run、測試、Evidence 與 Replay；不是預先寫死的成功畫面。</p></div><div className="demo-header-actions"><Link className="button secondary" href={`/runs/${story.original.id}`}>查看原始 Run</Link><Link className="button" href={`/runs/${story.replay.id}`}>查看 Replay</Link></div></div>
+    {recordingMode && <div className="demo-recording-note"><strong>錄影資料模式</strong><span>固定資料用於穩定錄製介面流程；正式模式會改讀 Supabase 真實 Run。</span></div>}
+    <div className="demo-header"><div><div className="eyebrow">五分鐘面試展示</div><h1>AI Coding Agent：從任務到可驗證決策</h1><p className="lead">{recordingMode ? "使用固定錄影案例展示完整流程，避免錄製期間受外部服務與模型延遲影響。" : "所有內容來自真實 Task、Agent Run、測試、Evidence 與 Replay；不是預先寫死的成功畫面。"}</p></div>{!recordingMode && <div className="demo-header-actions"><Link className="button secondary" href={`/runs/${story.original.id}`}>查看原始 Run</Link><Link className="button" href={`/runs/${story.replay.id}`}>查看 Replay</Link></div>}</div>
 
     <nav className="demo-nav" aria-label="Demo 段落"><a href="#intake">1 Intake</a><a href="#retrieval">2 Retrieval</a><a href="#patch">3 Patch</a><a href="#evidence">4 Evidence</a><a href="#replay">5 Replay</a><a href="#evaluation">6 Evaluation</a></nav>
 

@@ -106,6 +106,7 @@ notion-github-coding-agent/
 - Supabase Cloud project
 - GitHub fine-grained PAT 與 repository webhook
 - Notion internal integration、Data Source 與 webhook
+- Sprint Data Source 需包含 Start Date、End Date、Status、Window 與 Week Key；每日排程會自動輪替 Future／Next／Current／Last／Past
 - OpenAI API key
 - 選用：Slack Incoming Webhook、Ollama、Vercel CLI
 

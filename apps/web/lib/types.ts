@@ -17,10 +17,13 @@ export type Sprint = {
   start_date: string;
   end_date: string;
   status: "planned" | "active" | "completed";
+  sprint_window: SprintWindow;
   goal: string | null;
   notion_page_id: string;
   notion_page_url: string | null;
 };
+
+export type SprintWindow = "future" | "next" | "current" | "last" | "past";
 
 export type AgentRun = { id: string; work_item_id: string; status: string; risk_level: string | null; branch_name: string | null; started_at: string | null; finished_at: string | null; error_code?: string | null; error_message?: string | null; work_items?: { title: string } | null };
 

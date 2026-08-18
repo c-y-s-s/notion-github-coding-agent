@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Sprint, WorkItem } from "@/lib/types";
+import { carryOverCandidates } from "@/lib/sprint-carry-over";
 import { orderedSprints, sprintLabel, sprintSlots } from "@/lib/sprint-display";
 import { StatusBadge } from "./status-badge";
 
@@ -29,8 +30,15 @@ export function TaskBoard({
   const [view, setView] = useState<"board" | "list">("board");
   const [sprintView, setSprintView] = useState<SprintView>("current");
   const [saving, setSaving] = useState<string | null>(null);
+  const [carryingOver, setCarryingOver] = useState(false);
+  const [syncingNotion, setSyncingNotion] = useState(false);
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const slots = useMemo(() => sprintSlots(sprints), [sprints]);
+  const carryOverTasks = useMemo(() => carryOverCandidates(tasks, slots.last?.id), [tasks, slots.last?.id]);
+  const carryOverKey = carryOverTasks.map(task => task.id).join(",");
+  const [selectedCarryOver, setSelectedCarryOver] = useState<string[]>([]);
+  useEffect(() => setSelectedCarryOver(carryOverKey ? carryOverKey.split(",") : []), [carryOverKey]);
   const selectedSprint =
     sprintView === "current"
       ? slots.current
@@ -68,6 +76,45 @@ export function TaskBoard({
       setError(reason instanceof Error ? reason.message : "更新失敗");
     } finally {
       setSaving(null);
+    }
+  }
+
+  async function carryOver() {
+    if (!selectedCarryOver.length) return;
+    setCarryingOver(true);
+    setError("");
+    try {
+      const response = await fetch("/api/sprints/carry-over", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ taskIds: selectedCarryOver }),
+      });
+      const body = await response.json();
+      if (!response.ok && response.status !== 207) throw new Error(body.error ?? "延續任務失敗");
+      if (body.failures?.length) throw new Error(`${body.failures.length} 筆任務更新失敗，請重試`);
+      setSelectedCarryOver([]);
+      router.refresh();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "延續任務失敗");
+    } finally {
+      setCarryingOver(false);
+    }
+  }
+
+  async function resyncNotion() {
+    setSyncingNotion(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch("/api/sprints/resync-notion", { method: "POST" });
+      const body = await response.json();
+      if (!response.ok && response.status !== 207) throw new Error(body.error ?? "Notion 同步失敗");
+      if (body.failures?.length) throw new Error(`${body.updated.length} 筆成功、${body.failures.length} 筆失敗，請查看同步紀錄`);
+      setMessage(`已將本週 ${body.updated.length} 筆 Notion 任務重新同步；略過 ${body.skipped.length} 筆。`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Notion 同步失敗");
+    } finally {
+      setSyncingNotion(false);
     }
   }
 
@@ -110,13 +157,49 @@ export function TaskBoard({
               {selectedSprint.start_date} ～ {selectedSprint.end_date}
             </span>
           </div>
-          <StatusBadge value={selectedSprint.status} />
+          <div className="actions">
+            {sprintView === "current" ? (
+              <button className="button secondary" disabled={syncingNotion} onClick={resyncNotion}>
+                {syncingNotion ? "同步中…" : "重新同步本週至 Notion"}
+              </button>
+            ) : null}
+            <StatusBadge value={selectedSprint.status} />
+          </div>
         </div>
       )}
       {!selectedSprint && ["current", "next", "last"].includes(sprintView) && (
         <div className="notice">尚未建立這個週期的 Sprint。</div>
       )}
+      {sprintView === "current" && slots.current && carryOverTasks.length > 0 && (
+        <section className="card carry-over-panel">
+          <div className="carry-over-heading">
+            <div>
+              <span className="field-label">Sprint 延續檢視</span>
+              <h2>上週有 {carryOverTasks.length} 筆可延續任務</h2>
+              <p>只包含可執行或進行中的 Notion 任務；受阻、失敗、草稿與待審核 Issue 已排除。</p>
+            </div>
+            <button className="button" disabled={carryingOver || !selectedCarryOver.length} onClick={carryOver}>
+              {carryingOver ? "更新中…" : `將選取的 ${selectedCarryOver.length} 筆延續到本週`}
+            </button>
+          </div>
+          <div className="carry-over-list">
+            {carryOverTasks.map(task => (
+              <label key={task.id}>
+                <input
+                  type="checkbox"
+                  checked={selectedCarryOver.includes(task.id)}
+                  disabled={carryingOver}
+                  onChange={event => setSelectedCarryOver(current => event.target.checked ? [...current, task.id] : current.filter(id => id !== task.id))}
+                />
+                <span><strong>{task.title}</strong><small>{task.planning_status === "in_progress" ? "進行中" : "可執行"} · 原 Deadline {task.deadline ?? "未設定"}</small></span>
+              </label>
+            ))}
+          </div>
+          <p className="carry-over-note">執行後 Sprint 會改為本週，Deadline 會設為 {slots.current.end_date}；任務狀態保持不變。</p>
+        </section>
+      )}
       {error && <div className="notice error-text">{error}</div>}
+      {message && <div className="notice">{message}</div>}
       {view === "board" ? (
         <div className="task-board">
           {columns.map(([status, label]) => {

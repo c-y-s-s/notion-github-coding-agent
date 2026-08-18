@@ -7,3 +7,4 @@ export const taskPlanningSchema = z.object({
   deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   sprintId: z.string().uuid().nullable(),
 });
+export const sprintCarryOverSchema = z.object({ taskIds: z.array(z.string().uuid()).min(1).max(50) });

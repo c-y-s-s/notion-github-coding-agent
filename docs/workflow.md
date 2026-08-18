@@ -1,6 +1,8 @@
 # 完整工作流程
 
-GitHub Webhook 是即時同步入口。Vercel Cron 每天 04:00 UTC（台北時間 12:00）執行 reconciliation，補回漏送的 Issue／PR 狀態，並處理最多 10 筆待回寫 Notion 的工作。Cron 是安全網，不取代 Webhook。
+GitHub Webhook 是即時同步入口。Vercel Cron 每天 16:05 UTC（台北時間隔日 00:05）執行 reconciliation，補回漏送的 Issue／PR 狀態，並處理最多 10 筆待回寫 Notion 的工作。Cron 是安全網，不取代 Webhook。
+
+同一個每日 Cron 也會先執行 Sprint 輪替。系統以台北日期與 Notion 的 Start Date／End Date 計算 `Future → Next → Current → Last → Past`，同步更新 Notion 的 `Window`、`Status` 與 Supabase。每次至少保留一個 Next 與一個 Future Sprint；缺少時會在 Notion 建立下一個七日週期。輪替使用資料庫鎖避免重複執行，15 分鐘後會釋放失效鎖。
 
 ## Notion 來源
 
@@ -10,6 +12,14 @@ GitHub Webhook 是即時同步入口。Vercel Cron 每天 04:00 UTC（台北時�
 4. Notion 頁面刪除時只標記來源已刪除，不刪除稽核歷史。
 
 Sprint、Deadline 與 Agent Run 彼此獨立；規劃狀態改變不會自動觸發程式碼修改。
+
+## 延續上個 Sprint 的未完成任務
+
+進入「任務」頁面的「本週 Sprint」，系統會顯示「Sprint 延續檢視」。這是預覽與選取介面，不會在日期切換時自動搬動任務：勾選後按下「將選取的任務延續到本週」，才會把任務的 Sprint 改為 Current，並將 Deadline 更新為本週 Sprint 的結束日。
+
+系統只會列出上個 Sprint 中狀態為「待處理」或「進行中」的 Notion 任務。已完成、Backlog、受阻、Agent 執行失敗、缺少 Notion 頁面，以及 GitHub 待審核項目都不會被自動納入，避免一次操作改壞不同工作流程的資料。
+
+若 Supabase 的本週任務已正確，但 Notion 的狀態、Deadline 或 Sprint relation 仍是舊值，可在「任務 → 本週 Sprint」按下「重新同步本週至 Notion」。系統會以 Supabase 為準逐筆回寫，只處理有 Notion 頁面的本週 Notion 任務，並分別回報成功、略過與失敗筆數。
 
 ## GitHub 來源
 
