@@ -6,8 +6,8 @@ for (const line of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
   process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, "");
 }
 
-const secret = process.env.INTERNAL_JOB_SECRET ?? process.env.DASHBOARD_PASSWORD;
-if (!secret) throw new Error("apps/web/.env.local 缺少 INTERNAL_JOB_SECRET 或 DASHBOARD_PASSWORD");
+const secret = process.env.INTERNAL_JOB_SECRET;
+if (!secret) throw new Error("apps/web/.env.local 缺少 INTERNAL_JOB_SECRET");
 const baseUrl = process.env.DEMO_BASE_URL ?? "http://127.0.0.1:3001";
 const response = await fetch(`${baseUrl}/api/internal/demo/prepare`, {
   method: "POST",

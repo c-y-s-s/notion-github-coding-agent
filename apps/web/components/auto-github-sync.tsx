@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 const COOLDOWN_MS = 30_000;
 
 export function AutoGitHubSync() {
   const router = useRouter();
-  const pathname = usePathname();
   const started = useRef(false);
 
   useEffect(() => {
-    if (pathname === "/login" || started.current) return;
+    if (started.current) return;
     started.current = true;
     const lastRun = Number(sessionStorage.getItem("github-reconcile-at") || 0);
     if (Date.now() - lastRun < COOLDOWN_MS) return;
@@ -21,7 +20,7 @@ export function AutoGitHubSync() {
         router.refresh();
       }
     }).catch(() => undefined);
-  }, [pathname, router]);
+  }, [router]);
 
   return null;
 }

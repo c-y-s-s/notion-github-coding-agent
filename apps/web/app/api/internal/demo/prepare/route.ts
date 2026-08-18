@@ -26,7 +26,7 @@ const scenarios: Scenario[] = [
 const notionStatus = { draft: "草稿", ready: "可執行", in_progress: "進行中", blocked: "受阻", done: "已完成" } as const;
 
 export async function POST(request: Request) {
-  const expected = process.env.INTERNAL_JOB_SECRET ?? (process.env.NODE_ENV !== "production" ? process.env.DASHBOARD_PASSWORD : undefined);
+  const expected = process.env.INTERNAL_JOB_SECRET;
   if (!expected || request.headers.get("authorization") !== `Bearer ${expected}`) return failure("Unauthorized", 401);
 
   const db = adminDb();

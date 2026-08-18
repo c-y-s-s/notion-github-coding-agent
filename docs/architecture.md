@@ -8,9 +8,9 @@
 | --- | --- | --- |
 | Notion | 內部需求、規劃狀態、Sprint、Deadline | 程式碼審查與 Agent 執行 |
 | GitHub | 外部 Issue、repository、branch、PR 生命週期 | 內部優先順序 |
-| Next.js Web | 登入、來源審核、Webhook、操作指令與結果呈現 | 直接修改 worktree 或判定 patch 安全 |
+| Next.js Web | 來源審核、Webhook、操作指令與結果呈現 | 直接修改 worktree 或判定 patch 安全 |
 | Supabase | 跨系統身分、流程狀態、Run、步驟、artifact 與稽核紀錄 | 保存 repository checkout |
-| Python Worker | Retrieval、patch、確定性檢查與核准後 push | 使用者登入、自動建立或合併 PR |
+| Python Worker | Retrieval、patch、確定性檢查與核准後 push | 自動建立或合併 PR |
 | OpenAI／Ollama | 在允許範圍內提供結構化推論 | 授權與安全政策執行 |
 
 模型輸出一律視為未受信任的提案。路徑、Evidence、diff 與檢查通過前，都不能視為可核准結果。
@@ -32,14 +32,14 @@ flowchart LR
 
 ## 驗證與信任邊界
 
-- Dashboard 頁面與一般操作 API 需要已簽章的登入 Session。
+- Dashboard 是公開 Demo；頁面與一般操作 API 不要求登入 Session。
 - GitHub／Notion Webhook 使用各自的 Secret 驗證，且以 delivery ID 去重。
 - `/api/internal/*` 使用 `INTERNAL_JOB_SECRET`，不依賴瀏覽器 Cookie。
 - `/api/cron/reconcile` 使用 `CRON_SECRET`，供 Vercel Cron 呼叫。
 - Supabase service role key 只存在 Server 與 Worker，不提供給瀏覽器。
 - 只有本機 Worker 能存取 repository path 與建立 worktree。
 
-Dashboard 採單一管理者密碼保護。未登入訪客只能透過 GitHub 原生介面提交 Issue，不能進入內部工作台。
+Dashboard 採公開 Demo 模式。任何取得網址的人都能查看工作台並觸發一般操作；Webhook、Cron 與內部工作端點仍使用各自的 Secret 驗證。
 
 ## 資料權威與一致性
 

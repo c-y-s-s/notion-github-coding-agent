@@ -13,7 +13,7 @@
 ## 線上展示
 
 - 網址：[https://notion-github-coding-agent.vercel.app](https://notion-github-coding-agent.vercel.app)
-- 訪問密碼：`notion-github-demo-2026`
+- 公開 Demo，免登入即可瀏覽
 
 ## 為什麼做這個專案
 
@@ -87,7 +87,7 @@ Python Worker ──────────────────────
 
 | 元件 | 責任 |
 | --- | --- |
-| Next.js 15 / React 19 | Dashboard、登入、Webhook 與操作 API |
+| Next.js 15 / React 19 | Dashboard、Webhook 與操作 API |
 | Supabase Postgres / pgvector | 跨平台關聯、同步工作、Run、稽核與 repository embeddings |
 | Python 3.12 Worker | Retrieval、worktree、patch、檢查、replay、evaluation 與核准後 push |
 | OpenAI API | 正式 Task 的結構化分析、修改與 embeddings |
@@ -153,8 +153,6 @@ cp .env.example .env.local
 | `OPENAI_API_KEY` | 正式 Agent 與 embeddings |
 | `INTERNAL_JOB_SECRET` | 保護內部同步 API |
 | `CRON_SECRET` | 保護 reconciliation cron |
-| `DASHBOARD_PASSWORD` | 單一管理者登入密碼 |
-| `DASHBOARD_SESSION_SECRET` | Session cookie 簽章 secret |
 
 模型、Worker polling、timeout、Slack 等選用設定與預設值都列在 [.env.example](.env.example)。不要提交 `.env.local`，也不要把 service role key、PAT 或 webhook secret 放進前端程式碼。
 
