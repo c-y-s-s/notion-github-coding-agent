@@ -4,6 +4,17 @@
 
 > AI 可以準備修改，但不能自行上線。系統在人工核准前不會 push，也不會自動建立或合併 PR。
 
+## 專案介紹影片
+
+想先快速了解完整操作流程，可以觀看 [notion-github-coding-agent DEMO](https://youtu.be/2L_xbkq8Ges)：
+
+[![觀看 notion-github-coding-agent 專案介紹影片](https://img.youtube.com/vi/2L_xbkq8Ges/maxresdefault.jpg)](https://youtu.be/2L_xbkq8Ges)
+
+## 線上展示
+
+- 網址：[https://notion-github-coding-agent.vercel.app](https://notion-github-coding-agent.vercel.app)
+- 訪問密碼：`notion-github-demo-2026`
+
 ## 為什麼做這個專案
 
 Notion 適合規劃工作，GitHub 適合管理程式碼，但兩者之間仍缺少一個「工程決策層」：
@@ -28,7 +39,7 @@ Notion 適合規劃工作，GitHub 適合管理程式碼，但兩者之間仍缺
 
 ## 五分鐘 Demo
 
-如果只想快速了解專案，啟動 Web 後直接開啟 [http://localhost:3000/demo](http://localhost:3000/demo)。頁面會使用 Supabase 中真實的 Original Run 與 Replay lineage，依序展示：
+如果只想快速了解專案，可以先觀看 [專案介紹影片](https://youtu.be/2L_xbkq8Ges)，或啟動 Web 後直接開啟 [http://localhost:3000/demo](http://localhost:3000/demo)。頁面會使用 Supabase 中真實的 Original Run 與 Replay lineage，依序展示：
 
 1. Notion／GitHub intake 與人工控制
 2. Hybrid Retrieval
