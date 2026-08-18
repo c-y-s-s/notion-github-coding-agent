@@ -12,6 +12,7 @@
 - Run 具備 Baseline、Context、Diff、Evidence 與成本資料。
 - Replay 已到終止狀態，不要在錄影中等待模型。
 - 執行 `pnpm demo:prepare`，確認 Notion 與 Dashboard 都有草稿、可執行、進行中、受阻、完成等情境。
+- 本週 Sprint 的「延續檢視」應顯示「DEMO：延續搜尋效能優化」；上週已完成任務不應出現在延續清單。
 
 ## 建議錄影動線
 

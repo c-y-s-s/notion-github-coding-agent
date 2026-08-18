@@ -20,6 +20,7 @@ const scenarios: Scenario[] = [
   { title: "補強 GitHub Webhook 去重測試", type: "chore", description: "同一 delivery 重送時不可建立重複事件或任務。", acceptance: "重送相同 delivery ID 時只處理一次。", planning: "in_progress", agent: "idle", slot: "current", dayOffset: 6 },
   { title: "新增 Agent Run 錯誤分類篩選", type: "feature", description: "目前失敗紀錄難以依錯誤原因篩選，且前次執行已失敗。", acceptance: "可依 baseline、retrieval、model、evidence 與 push 錯誤分類。", planning: "blocked", agent: "failed", slot: "current", dayOffset: 2 },
   { title: "DEMO：規劃 Slack 失敗通知", type: "feature", description: "尚在釐清通知對象、頻率與敏感資訊遮罩。", acceptance: "需求確認後才能排入 Sprint。", planning: "draft", agent: "idle", slot: null },
+  { title: "DEMO：延續搜尋效能優化", type: "chore", description: "上個 Sprint 已完成分析，但索引查詢仍需要補上效能測試。", acceptance: "大型資料集查詢時間需維持在兩秒內，並保留 benchmark 結果。", planning: "ready", agent: "idle", slot: "last", dayOffset: 4 },
   { title: "DEMO：完成登入錯誤訊息修正", type: "bug", description: "登入失敗時提供可採取行動的錯誤訊息。", acceptance: "錯誤訊息不洩漏帳號是否存在，並通過既有測試。", planning: "done", agent: "idle", slot: "last", dayOffset: 5 },
 ];
 
