@@ -1,47 +1,56 @@
-# Five-minute interview demo
+# 五分鐘面試 Demo 腳本
 
-Open `/demo`. The page selects the latest real Original + Replay lineage from Supabase; it does not generate presentation-only results.
+開啟 `/demo`。頁面讀取 Supabase 中最新的真實 Original Run + Replay lineage，不產生展示專用假資料。
 
-## 0:00–0:40 — Intake and human control
+## 錄影前檢查
 
-- Notion is the internal planning source.
-- External GitHub Issues enter an Inbox and require Accept or Link.
-- Not every Notion Task becomes a GitHub Issue.
-- The Agent cannot push until a human approves a verified patch.
+- Web、Worker 與 provider 連線正常。
+- `/demo` 已選到預期的 Original + Exact Replay。
+- 畫面不顯示 `.env`、token、私人 URL 或通知。
+- Run 具備 Baseline、Context、Diff、Evidence 與成本資料。
+- Replay 已到終止狀態，不要在錄影中等待模型。
 
-## 0:40–1:25 — Context retrieval
+## 0:00–0:40｜來源與人工控制
 
-- Code files are indexed per commit with path, hash, and embedding; raw source is not stored in Supabase.
-- Hybrid retrieval combines lexical rank and semantic rank.
-- Evaluation fixtures and generated reports are excluded from production Context.
-- A retrieval failure degrades to Keyword rather than stopping the complete workflow.
+- Notion 管理內部規劃，外部 GitHub Issue 必須先進 Inbox。
+- 不是每個 Notion Task 都會成為 GitHub Issue。
+- Agent 在人工核准前不能 push。
 
-## 1:25–2:25 — Patch workflow
+## 0:40–1:25｜Context Retrieval
 
-- Baseline install, lint, typecheck, and test run before model editing.
-- The model proposes no more than three complete file replacements.
-- Checks run after every edit; Error Analysis may retry at most three times.
-- The dark Diff is the verified artifact, not an untested model response.
+- 程式碼依 commit 建立 path、hash 與 embedding 索引，Supabase 不保存原文。
+- Hybrid 結合 Keyword 與 Semantic rank。
+- Production Context 排除 Evaluation fixture 與產出。
+- Embedding 失敗會降級為 Keyword 並留下紀錄。
 
-## 2:25–3:10 — Evidence gate
+## 1:25–2:25｜Patch 流程
 
-- Every patch must cite an exact file, line range, quote, and reason.
-- The Worker checks the quote against the exact Context it sent.
-- A model cannot mark its own citation as trusted.
+- 修改前執行 install、lint、typecheck、test Baseline。
+- 模型最多替換 3 個完整檔案。
+- 每次修改後重跑 Checks，Error Analysis 最多重試 3 次。
+- 真正審核的是 Git 產生且通過檢查的 Diff，不是模型文字。
 
-## 3:10–4:15 — Exact Replay
+## 2:25–3:10｜Evidence Gate
 
-- Exact Replay fixes Task snapshot, commit SHA, Context paths, and hashes.
-- In the retained E2E run, Prompt v1 passed all checks; Prompt v2 cited incorrect line numbers and was blocked.
-- The negative result demonstrates that stronger prompt wording is not automatically better.
+- Patch 必須引用檔案、行號、原文與理由。
+- Worker 對送入模型的 exact Context 驗證引用。
+- 模型不能宣告自己的 Evidence 可信。
 
-## 4:15–5:00 — Evaluation and trade-offs
+## 3:10–4:15｜Exact Replay
 
-- Agent Benchmark tests patches, safe refusals, hidden tests, and regressions.
-- Retrieval Dataset ranks 20–21 files per case with explicit ground truth.
-- Keyword and Hybrid tied on retrieval quality; Hybrid was significantly slower.
-- The conclusion is not “embeddings win.” The system records evidence and keeps the engineering decision reviewable.
+- Replay 固定 Task、commit、Context paths 與 hashes。
+- 保留案例中 Prompt v1 通過，v2 因錯誤行號被 Gate 阻擋。
+- 這證明更強的 Prompt 措辭不必然更好。
 
-## Backup
+## 4:15–5:00｜Evaluation 與取捨
 
-If Supabase has no Replay lineage, `/demo` shows an honest setup state. Open a completed modern Run, create an Exact Replay, and return after it reaches a terminal status.
+- Agent Benchmark 評估 Patch、Safe Refusal、Hidden Tests 與 Regression。
+- Retrieval Dataset 使用明確 ground truth 排名 20–21 個檔案。
+- Keyword 與 Hybrid 品質相同，但 Hybrid 延遲較高。
+- 結論不是「Embedding 一定比較好」，而是保存證據供工程決策。
+
+## 備援與說法限制
+
+若 Demo 頁失敗，依序改用 Original Run Detail、Replay child、[E2E 紀錄](e2e-agent-replay.md)，最後才使用 README 架構圖。
+
+不要宣稱 Hybrid 更準、Replay 輸出完全 deterministic、通過的 Run 已可上 production、12-case 具有統計代表性，或 Agent 會自動建立／合併 PR。
