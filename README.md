@@ -1,23 +1,25 @@
 # Notion GitHub Coding Agent
 
-一個 **human-in-the-loop AI coding workflow**：把 Notion 的內部任務與 GitHub 的外部 Issue 收進同一個工作台，讓 AI 在隔離的本機 worktree 分析程式碼、產生 patch 並執行檢查，最後由人決定是否推送分支。
+一個以人工審核為核心的 **AI 軟體工程工作流**：整合 Notion 任務、GitHub Issues、隔離式 Patch 執行與可重現的模型評估，讓 AI 能協助修改程式碼，但不能自行推送或合併。
 
-> AI 可以準備修改，但不能自行上線。系統在人工核准前不會 push，也不會自動建立或合併 PR。
+[線上展示](https://notion-github-coding-agent.vercel.app) · [Demo 影片](https://youtu.be/TPr4YH-15n8) · [E2E Replay 紀錄](docs/e2e-agent-replay.md) · [系統架構](docs/architecture.md)
 
-## 專案介紹影片
+> 核心原則：AI 只負責準備 Patch；推送前必須通過 Baseline、Policy、Checks、Evidence Gate 與人工核准。
 
-想先快速了解完整操作流程，可以觀看 [notion-github-coding-agent DEMO](https://youtu.be/TPr4YH-15n8)：
+## 專案摘要
 
-[![觀看 notion-github-coding-agent 專案介紹影片](https://img.youtube.com/vi/TPr4YH-15n8/maxresdefault.jpg)](https://youtu.be/TPr4YH-15n8)
+| 面向 | 實作內容 |
+| --- | --- |
+| 任務入口 | 統一管理 Notion 內部任務與 GitHub 外部 Issues，保留各來源的責任邊界 |
+| Agent 執行 | Python Worker 在獨立 Git worktree 中執行 Baseline、Context Retrieval、Patch 與測試 |
+| 安全控制 | 指令與路徑白名單、最多修改 3 個檔案、Evidence Gate、人工核准及 base SHA 重查 |
+| 可追蹤性 | 保存 Run、commit、Context path/hash、Diff、Checks、Evidence 與審核結果 |
+| 模型評估 | Exact Replay 固定輸入條件，搭配 12 個版本化案例與 hidden acceptance checks |
+| 技術棧 | Next.js 15、React 19、TypeScript、Python 3.12、Supabase、OpenAI、Notion API、GitHub API |
 
-## 線上展示
+## 為什麼做這個專案
 
-- 網址：[https://notion-github-coding-agent.vercel.app](https://notion-github-coding-agent.vercel.app)
-- 公開 Demo，免登入即可瀏覽
-
-## 這個專案解決什麼問題
-
-Notion 適合安排內部工作，GitHub 適合追蹤程式問題，但兩者都無法單獨回答以下問題：
+Notion 適合安排工作，GitHub 適合追蹤程式問題，但把 AI 接進流程後，真正困難的不是「產生程式碼」，而是回答：
 
 1. 外部 Issue 的資訊是否足夠，能不能進入內部開發流程？
 2. AI 修改前，如何證明原始專案本來可以正常建置與測試？
@@ -25,7 +27,26 @@ Notion 適合安排內部工作，GitHub 適合追蹤程式問題，但兩者都
 4. 當 main branch 已經改變，如何避免推送建立在舊版本上的 Patch？
 5. 換模型或 Prompt 後，如何在相同輸入條件下比較結果？
 
-因此本專案在 Notion、GitHub 與 AI Agent 之間加入一層「工程決策與驗證流程」。AI 可以準備修改，但輸入範圍、修改權限、驗證條件與最終推送都由系統和人共同控制。
+因此本專案把重點放在工程控制：限制 AI 看見與修改的範圍、驗證引用證據、保存執行紀錄，並將最終推送權留給人。
+
+## 已驗證成果
+
+| 驗證項目 | 結果 |
+| --- | --- |
+| 真實 E2E Run | Original Run 與 Exact Replay 固定同一筆任務、base commit 與 6 份 Context hash |
+| Baseline | lint、typecheck 與 test 均先通過，才允許模型修改 |
+| Fail-closed | Replay 產生錯誤行號引用時，Evidence Gate 以 `PATCH_EVIDENCE_MISSING` 阻擋，未進入推送 |
+| 人工控制 | Original Run 進入待核准後由人拒絕；兩次執行皆未建立分支或 PR |
+| Evaluation | Dataset v1.1.0 共 12 案例：5 patch、5 safety、2 quality，使用 hidden checks 驗證 |
+| 負面結果 | Keyword 與 Hybrid Retrieval 品質相同但 Hybrid 較慢，因此不宣稱 embeddings 一定更好 |
+
+完整輸入、token、成本與失敗原因見 [E2E Replay 紀錄](docs/e2e-agent-replay.md)。這些結果證明控制機制能運作，但資料集規模仍不足以代表 production reliability。
+
+## Demo
+
+公開網站可免登入瀏覽；4 分鐘影片展示 Intake、Sprint、Agent Run、Evidence Gate、人工核准與 Replay。
+
+[![觀看 Notion GitHub Coding Agent Demo](https://img.youtube.com/vi/TPr4YH-15n8/maxresdefault.jpg)](https://youtu.be/TPr4YH-15n8)
 
 ## 一筆任務如何走完整個工作流
 
@@ -42,7 +63,10 @@ Notion 適合安排內部工作，GitHub 適合追蹤程式問題，但兩者都
 
 通過人工核准後，系統只推送 `agent/*` 獨立分支；PR、Merge 與部署仍由人完成。完整欄位與狀態轉移見 [工作流程文件](docs/workflow.md)。
 
-## 完整狀態流程
+<details>
+<summary><strong>展開完整狀態流程</strong></summary>
+
+<br />
 
 ```mermaid
 flowchart TD
@@ -72,7 +96,9 @@ flowchart TD
     U -.-> RP
 ```
 
-## 技術難點與設計取捨
+</details>
+
+## 關鍵工程決策
 
 | 難點                       | 直接做法的風險                                   | 本專案的處理方式                                                                 |
 | -------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------- |
@@ -105,19 +131,6 @@ Python Worker ──────────────────────
 | OpenAI API                   | 正式 Task 的結構化分析、修改與 embeddings                          |
 | Ollama（選用）               | 僅供 Evaluation 比較本地模型，不可產生正式 Task patch              |
 
-## 專案結構
-
-```text
-notion-github-coding-agent/
-├─ apps/web/                 Next.js Dashboard、API routes 與 Vercel Cron 設定
-├─ workers/agent/            Python Worker、benchmark 與 retrieval evaluation
-├─ supabase/migrations/      Database migrations（schema source of truth）
-├─ supabase/seed.sql         單一 repository 的初始設定
-├─ docs/                     架構、流程、安全、evaluation 與 Demo 文件
-├─ .env.example              環境變數範本
-└─ pnpm-workspace.yaml       pnpm workspace 設定
-```
-
 ## 本機啟動
 
 需求：Node.js 20+、pnpm、Python 3.12+、Git、Supabase project、Notion integration、GitHub fine-grained PAT 與 OpenAI API key。目前版本以單一管理者、單一 Notion workspace 與單一 repository 為目標。
@@ -137,19 +150,15 @@ pip install -e '.[dev]'
 cd ../..
 ```
 
-### 2. 設定環境變數
+### 2. 設定服務
 
 ```bash
 cp .env.example apps/web/.env.local
 ```
 
-依 [.env.example](.env.example) 填入 Supabase、GitHub、Notion、OpenAI 與內部 job secrets。Web 與 Worker 都讀取 `apps/web/.env.local`；不要提交此檔案或把 service role key、PAT 放進前端程式碼。
+依 [.env.example](.env.example) 填入 Supabase、GitHub、Notion、OpenAI 與內部 job secrets，再依序套用 `supabase/migrations/` 與 `supabase/seed.sql`。Web 與 Worker 都讀取 `apps/web/.env.local`；設定細節見 [資料庫設計](docs/database.md)。
 
-### 3. 建立資料庫
-
-依序套用 `supabase/migrations/`，再修改並執行 `supabase/seed.sql`，設定 repository、default branch、本機路徑、檢查指令與 Notion Data Source。細節見 [資料庫設計](docs/database.md)。
-
-### 4. 啟動 Web 與 Worker
+### 3. 啟動 Web 與 Worker
 
 Terminal 1：
 
@@ -167,23 +176,7 @@ python -m agent_worker.worker
 
 開啟 [http://localhost:3000](http://localhost:3000)。若只想讓 Worker 處理目前一筆工作後結束，加入 `--once`。
 
-## 事件通知與部署設定
-
-Webhook endpoint：
-
-```text
-GitHub: https://<your-domain>/api/webhooks/github
-Notion: https://<your-domain>/api/webhooks/notion
-```
-
-GitHub 至少訂閱 **Issues、Pull requests、Ping**。`apps/web/vercel.json` 每天台北時間 00:05 執行 Sprint 輪替與 reconciliation，用來補回漏送事件，但不取代 webhook。
-
-本機若要立即處理待重試的 Notion 同步工作：
-
-```bash
-curl -X POST http://localhost:3000/api/internal/sync-jobs/process \
-  -H "Authorization: Bearer $INTERNAL_JOB_SECRET"
-```
+GitHub 與 Notion webhook 分別指向 `/api/webhooks/github`、`/api/webhooks/notion`。Vercel Cron 每天執行 Sprint 輪替與 reconciliation，補回可能漏送的事件，但不取代 webhook。
 
 ## 評估
 
