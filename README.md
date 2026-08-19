@@ -1,10 +1,14 @@
 # Notion GitHub Coding Agent
 
+[![CI](https://github.com/c-y-s-s/notion-github-coding-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/c-y-s-s/notion-github-coding-agent/actions/workflows/ci.yml)
+
 一個以人工審核為核心的 **AI 軟體工程工作流**：整合 Notion 任務、GitHub Issues、隔離式 Patch 執行與可重現的模型評估，讓 AI 能協助修改程式碼，但不能自行推送或合併。
 
 [線上展示](https://notion-github-coding-agent.vercel.app) · [Demo 影片](https://youtu.be/TPr4YH-15n8) · [E2E Replay 紀錄](docs/e2e-agent-replay.md) · [系統架構](docs/architecture.md)
 
 > 核心原則：AI 只負責準備 Patch；推送前必須通過 Baseline、Policy、Checks、Evidence Gate 與人工核准。
+
+本專案不以取代 Copilot、Devin 或 OpenHands 等通用 Coding Agent 為目標；重點是實作 Agent 進入既有 SDLC 時所需的任務治理、驗證、核准與稽核控制層。
 
 ## Demo 影片
 
@@ -139,7 +143,7 @@ Python Worker ──────────────────────
 
 ## 本機啟動
 
-需求：Node.js 20+、pnpm、Python 3.12+、Git、Supabase project、Notion integration、GitHub fine-grained PAT 與 OpenAI API key。目前版本以單一管理者、單一 Notion workspace 與單一 repository 為目標。
+需求：Node.js 22+、pnpm、Python 3.12+、Git、Supabase project、Notion integration、GitHub fine-grained PAT 與 OpenAI API key。目前版本以單一管理者、單一 Notion workspace 與單一 repository 為目標。
 
 ### 1. 安裝依賴
 
