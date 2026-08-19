@@ -6,6 +6,18 @@
 
 > 核心原則：AI 只負責準備 Patch；推送前必須通過 Baseline、Policy、Checks、Evidence Gate 與人工核准。
 
+## Demo 影片
+
+4 分鐘展示從任務進件、Sprint 規劃、Agent 執行、Evidence Gate，到人工核准與 Exact Replay 的完整流程。
+
+[![觀看 Notion GitHub Coding Agent Demo](https://img.youtube.com/vi/TPr4YH-15n8/maxresdefault.jpg)](https://youtu.be/TPr4YH-15n8)
+
+### 影片中的核心亮點
+
+- **可控制：** AI 只能在隔離 worktree 準備 Patch，不能自行推送、建立 PR 或合併。
+- **可驗證：** Baseline、Checks 與 Evidence Gate 共同驗證修改結果及引用的原始程式碼。
+- **可重現：** Exact Replay 固定 task、commit、Context 與 hash，用相同輸入比較模型或 Prompt。
+
 ## 專案摘要
 
 | 面向 | 實作內容 |
@@ -41,12 +53,6 @@ Notion 適合安排工作，GitHub 適合追蹤程式問題，但把 AI 接進�
 | 負面結果 | Keyword 與 Hybrid Retrieval 品質相同但 Hybrid 較慢，因此不宣稱 embeddings 一定更好 |
 
 完整輸入、token、成本與失敗原因見 [E2E Replay 紀錄](docs/e2e-agent-replay.md)。這些結果證明控制機制能運作，但資料集規模仍不足以代表 production reliability。
-
-## Demo
-
-公開網站可免登入瀏覽；4 分鐘影片展示 Intake、Sprint、Agent Run、Evidence Gate、人工核准與 Replay。
-
-[![觀看 Notion GitHub Coding Agent Demo](https://img.youtube.com/vi/TPr4YH-15n8/maxresdefault.jpg)](https://youtu.be/TPr4YH-15n8)
 
 ## 一筆任務如何走完整個工作流
 
