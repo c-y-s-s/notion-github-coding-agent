@@ -8,7 +8,7 @@
 
 想先快速了解完整操作流程，可以觀看 [notion-github-coding-agent DEMO](https://youtu.be/TPr4YH-15n8)：
 
-[![觀看 notion-github-coding-agent 專案介紹影片](https://img.youtube.com/vi/2L_xbkq8Ges/maxresdefault.jpg)](https://youtu.be/2L_xbkq8Ges)
+[![觀看 notion-github-coding-agent 專案介紹影片](https://img.youtube.com/vi/TPr4YH-15n8/maxresdefault.jpg)](https://youtu.be/TPr4YH-15n8)
 
 ## 線上展示
 
@@ -119,7 +119,7 @@ flowchart TD
 
 ## Demo 導覽
 
-先觀看 [專案介紹影片](https://youtu.be/2L_xbkq8Ges)，或啟動 Web 後開啟 [http://localhost:3000/demo](http://localhost:3000/demo)。Demo 頁依序展示：
+先觀看 [專案介紹影片](https://youtu.be/TPr4YH-15n8)，或啟動 Web 後開啟 [http://localhost:3000/demo](http://localhost:3000/demo)。Demo 頁依序展示：
 
 1. 雙來源 Intake 與人工決策
 2. Baseline 與 commit-bound Context Retrieval
