@@ -22,6 +22,38 @@
 - **可驗證：** Baseline、Checks 與 Evidence Gate 共同驗證修改結果及引用的原始程式碼。
 - **可重現：** Exact Replay 固定 task、commit、Context 與 hash，用相同輸入比較模型或 Prompt。
 
+## 核心工作流程
+
+Notion 與 GitHub 任務先經人工規劃，再由 Worker 在隔離環境執行；任何檢查、證據或 base commit 不一致，都會在推送前停止。
+
+```mermaid
+flowchart TD
+    N[Notion Task] --> P[Planning: Sprint / Deadline / Status]
+    G[GitHub Issue] --> I{Inbox 人工分類}
+    I -->|Needs Info / Ignore| Z[停止，不觸發 Agent]
+    I -->|Accept / Link| P
+
+    P --> Q[Queue Agent Run]
+    Q --> L[Claim lease + 建立隔離 worktree]
+    L --> B{Baseline checks 通過?}
+    B -->|否| BF[記錄 BASELINE_FAILED]
+    B -->|是| R[固定 commit 的 Hybrid Retrieval]
+    R --> M[模型產生結構化 Patch + Evidence]
+    M --> C{Policy + Checks + Evidence Gate}
+    C -->|失敗且未達 3 次| E[Error Analysis] --> M
+    C -->|失敗且已達上限| F[記錄失敗原因與 artifacts]
+    C -->|通過| H{人工審查}
+    H -->|Reject| RJ[保留 Run，不推送]
+    H -->|Approve| S{Remote base SHA 相同?}
+    S -->|否| ST[STALE_BASE：以新 commit 重跑]
+    S -->|是| U[Push agent/* branch]
+    U --> PR[人工建立 PR / Merge / Deploy]
+
+    F -.-> RP[Exact Replay / Evaluation]
+    RJ -.-> RP
+    U -.-> RP
+```
+
 ## 專案摘要
 
 | 面向 | 實作內容 |
@@ -72,41 +104,6 @@ Notion 適合安排工作，GitHub 適合追蹤程式問題，但把 AI 接進�
 | Replay／Evaluation | 固定 Task、commit、Context 與 hash，比較模型、Prompt 與 Retrieval | 以 hidden checks 驗證 Patch、Regression 與 Safe Refusal |
 
 通過人工核准後，系統只推送 `agent/*` 獨立分支；PR、Merge 與部署仍由人完成。完整欄位與狀態轉移見 [工作流程文件](docs/workflow.md)。
-
-<details>
-<summary><strong>展開完整狀態流程</strong></summary>
-
-<br />
-
-```mermaid
-flowchart TD
-    N[Notion Task] --> P[Planning: Sprint / Deadline / Status]
-    G[GitHub Issue] --> I{Inbox 人工分類}
-    I -->|Needs Info / Ignore| Z[停止，不觸發 Agent]
-    I -->|Accept / Link| P
-
-    P --> Q[Queue Agent Run]
-    Q --> L[Claim lease + 建立隔離 worktree]
-    L --> B{Baseline checks 通過?}
-    B -->|否| BF[記錄 BASELINE_FAILED]
-    B -->|是| R[固定 commit 的 Hybrid Retrieval]
-    R --> M[模型產生結構化 Patch + Evidence]
-    M --> C{Policy + Checks + Evidence Gate}
-    C -->|失敗且未達 3 次| E[Error Analysis] --> M
-    C -->|失敗且已達上限| F[記錄失敗原因與 artifacts]
-    C -->|通過| H{人工審查}
-    H -->|Reject| RJ[保留 Run，不推送]
-    H -->|Approve| S{Remote base SHA 相同?}
-    S -->|否| ST[STALE_BASE：以新 commit 重跑]
-    S -->|是| U[Push agent/* branch]
-    U --> PR[人工建立 PR / Merge / Deploy]
-
-    F -.-> RP[Exact Replay / Evaluation]
-    RJ -.-> RP
-    U -.-> RP
-```
-
-</details>
 
 ## 關鍵工程決策
 
