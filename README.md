@@ -6,7 +6,7 @@
 
 ## 專案介紹影片
 
-想先快速了解完整操作流程，可以觀看 [notion-github-coding-agent DEMO](https://youtu.be/2L_xbkq8Ges)：
+想先快速了解完整操作流程，可以觀看 [notion-github-coding-agent DEMO](https://youtu.be/TPr4YH-15n8)：
 
 [![觀看 notion-github-coding-agent 專案介紹影片](https://img.youtube.com/vi/2L_xbkq8Ges/maxresdefault.jpg)](https://youtu.be/2L_xbkq8Ges)
 
@@ -107,15 +107,15 @@ flowchart TD
 
 ## 技術難點與設計取捨
 
-| 難點 | 直接做法的風險 | 本專案的處理方式 |
-| --- | --- | --- |
-| Notion／GitHub 雙來源同步 | 重複事件、漏送事件、兩邊狀態互相覆寫 | Webhook event ID 去重、sync job retry、reconciliation 補償、欄位責任分離 |
-| 多 Worker 與中斷恢復 | 同一 Run 被重複處理，或 crash 後永遠卡在 running | Active Run 唯一限制、claim owner、lease expiry 與 stale run recovery |
-| LLM Context 選擇 | 整個 repo 太大；不同 Run 看到不同內容而難以比較 | commit-bound index、Hybrid Retrieval、Context path/hash 持久化、keyword fallback |
-| Patch 安全性 | 模型修改敏感檔案、執行任意指令或擴大變更範圍 | worktree 隔離、指令白名單、敏感路徑 policy、最多 3 個檔案 |
-| 「測試通過」仍可能理由錯誤 | 模型引用不存在的程式碼，審查者難以發現 | Evidence Gate 對 exact Context 驗證 path、line、quote |
-| 核准與推送之間的競態 | main 已更新，舊 Patch 仍被推送 | Approve 時重新 fetch 並比較 base SHA；不一致即拒絕推送 |
-| 模型／Prompt 評估 | 單次 Demo 的成功無法公平比較 | Exact Replay 固定輸入；Benchmark 使用 hidden checks 與 refusal cases |
+| 難點                       | 直接做法的風險                                   | 本專案的處理方式                                                                 |
+| -------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------- |
+| Notion／GitHub 雙來源同步  | 重複事件、漏送事件、兩邊狀態互相覆寫             | Webhook event ID 去重、sync job retry、reconciliation 補償、欄位責任分離         |
+| 多 Worker 與中斷恢復       | 同一 Run 被重複處理，或 crash 後永遠卡在 running | Active Run 唯一限制、claim owner、lease expiry 與 stale run recovery             |
+| LLM Context 選擇           | 整個 repo 太大；不同 Run 看到不同內容而難以比較  | commit-bound index、Hybrid Retrieval、Context path/hash 持久化、keyword fallback |
+| Patch 安全性               | 模型修改敏感檔案、執行任意指令或擴大變更範圍     | worktree 隔離、指令白名單、敏感路徑 policy、最多 3 個檔案                        |
+| 「測試通過」仍可能理由錯誤 | 模型引用不存在的程式碼，審查者難以發現           | Evidence Gate 對 exact Context 驗證 path、line、quote                            |
+| 核准與推送之間的競態       | main 已更新，舊 Patch 仍被推送                   | Approve 時重新 fetch 並比較 base SHA；不一致即拒絕推送                           |
+| 模型／Prompt 評估          | 單次 Demo 的成功無法公平比較                     | Exact Replay 固定輸入；Benchmark 使用 hidden checks 與 refusal cases             |
 
 ## Demo 導覽
 
@@ -143,13 +143,13 @@ Python Worker ──────────────────────
       └─ GitHub agent/* branch（僅人工核准後）
 ```
 
-| 元件 | 責任 |
-| --- | --- |
-| Next.js 15 / React 19 | Dashboard、Webhook 與操作 API |
-| Supabase Postgres / pgvector | 跨平台關聯、同步工作、Run、稽核與 repository embeddings |
-| Python 3.12 Worker | Retrieval、worktree、patch、檢查、replay、evaluation 與核准後 push |
-| OpenAI API | 正式 Task 的結構化分析、修改與 embeddings |
-| Ollama（選用） | 僅供 Evaluation 比較本地模型，不可產生正式 Task patch |
+| 元件                         | 責任                                                               |
+| ---------------------------- | ------------------------------------------------------------------ |
+| Next.js 15 / React 19        | Dashboard、Webhook 與操作 API                                      |
+| Supabase Postgres / pgvector | 跨平台關聯、同步工作、Run、稽核與 repository embeddings            |
+| Python 3.12 Worker           | Retrieval、worktree、patch、檢查、replay、evaluation 與核准後 push |
+| OpenAI API                   | 正式 Task 的結構化分析、修改與 embeddings                          |
+| Ollama（選用）               | 僅供 Evaluation 比較本地模型，不可產生正式 Task patch              |
 
 ## 專案結構
 
@@ -198,19 +198,19 @@ cp .env.example apps/web/.env.local
 
 必要設定：
 
-| 變數 | 用途 |
-| --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server 與 Worker 的資料庫存取 |
-| `GITHUB_TOKEN` | 讀取 repository、建立 Issue、核准後 push branch |
-| `GITHUB_WEBHOOK_SECRET` | 驗證 GitHub webhook 簽章 |
-| `NOTION_TOKEN` | Notion internal integration token |
-| `NOTION_WEBHOOK_SECRET` | 驗證 Notion webhook |
-| `NOTION_DATA_SOURCE_ID` | Task database 的 Data Source ID |
-| `OPENAI_API_KEY` | 正式 Agent 與 embeddings |
-| `INTERNAL_JOB_SECRET` | 保護內部同步 API |
-| `CRON_SECRET` | 保護 reconciliation cron |
+| 變數                            | 用途                                            |
+| ------------------------------- | ----------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase Project URL                            |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key                               |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Server 與 Worker 的資料庫存取                   |
+| `GITHUB_TOKEN`                  | 讀取 repository、建立 Issue、核准後 push branch |
+| `GITHUB_WEBHOOK_SECRET`         | 驗證 GitHub webhook 簽章                        |
+| `NOTION_TOKEN`                  | Notion internal integration token               |
+| `NOTION_WEBHOOK_SECRET`         | 驗證 Notion webhook                             |
+| `NOTION_DATA_SOURCE_ID`         | Task database 的 Data Source ID                 |
+| `OPENAI_API_KEY`                | 正式 Agent 與 embeddings                        |
+| `INTERNAL_JOB_SECRET`           | 保護內部同步 API                                |
+| `CRON_SECRET`                   | 保護 reconciliation cron                        |
 
 模型、Worker polling、timeout、Slack 等選用設定與預設值都列在 [.env.example](.env.example)。不要提交 `.env.local`，也不要把 service role key、PAT 或 webhook secret 放進前端程式碼。
 
