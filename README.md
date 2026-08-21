@@ -225,6 +225,18 @@ ruff check .
 pytest
 ```
 
+## 本專案展現的技術能力
+
+**核心技術：** Next.js 15、React 19、TypeScript、Python 3.12、Supabase Postgres、OpenAI API、Notion API、GitHub API。
+
+**實作能力：**
+
+- 建立 Next.js Dashboard、API Routes 與 Webhook 整合。
+- 使用 Python Worker、Git worktree 與 OpenAI 產生並驗證 Patch。
+- 實作 Hybrid Retrieval、Evidence Gate、人工核准與 Exact Replay。
+- 使用 Vitest、Pytest、Ruff、TypeScript 與 GitHub Actions 執行自動化驗證。
+- 使用 Vercel 部署 Web，並以 Supabase 保存任務、同步與 Agent 執行紀錄。
+
 ## 安全邊界
 
 - 僅操作資料庫白名單中的本機 repository；每次 Run 使用獨立 worktree。
